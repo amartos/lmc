@@ -62,9 +62,9 @@ vpath %.l    $(SRCTREE)
 ###############################################################################
 
 LDEPS		:= $(shell find $(SRCS) -type f -name "*.l")
-CDEPS		:= $(LDEPS:%.l=$(notdir %.yy.c)) $(shell find $(SRCS) -type f -name "*.c")
+CDEPS		:= $(LDEPS:%.l=$(notdir %.yy.c)) \
+				$(shell find $(SRCS) -type f -name "*.c" -and -not -name "$(PROJECT).c")
 UDEPS		:= $(shell find $(UNITS) -type f -name "*.c")
-ODEPS		:= $(CDEPS:%.c=$(OBJS)/%.o)
 
 CC			= gcc
 STD			= gnu99
@@ -121,7 +121,7 @@ $(OBJS)/%.o: %.c
 	@mkdir -p $(dir $@) $(DEPS)/$(dir $*)
 	@$(CC) $(CFLAGS) $(DFLAGS) $(DEPS)/$*.d -c $< -o $@
 
-$(BIN)/%: $(OBJS)/%.o $(ODEPS)
+$(BIN)/%: $(OBJS)/%.o $(CDEPS:%.c=$(OBJS)/%.o)
 	@mkdir -p $(dir $@)
 	@$(CC) $(LDLIBS) $^ -o $@
 
@@ -150,6 +150,7 @@ $(LOGS)/%.difflog: $(TLOGS)/%.log $(LOGS)/%.log
 all: $(PROJECT)
 
 # Compile la cible principale du project (cible par défaut)
+$(PROJECT): CDEPS  += $(shell find $(SRCS) -type f -name $(PROJECT).c)
 $(PROJECT): CFLAGS += -O3
 $(PROJECT): %: clean init $(BIN)/%
 	@find $(BUILD) -empty -delete
@@ -163,8 +164,8 @@ install: $(PROJECT)
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
 tests: CFLAGS += -g -O0 --coverage
-tests: LDLIBS += -L$(LIBS) -lsccroll $(shell $(MOCKS) $(CDEPS) $*.c) --coverage
-tests: clean init $(UDEPS:%.c=$(OBJS)/%.o) $(UDEPS:%.c=$(LOGS)/%.difflog)
+tests: LDLIBS += -L$(LIBS) -lsccroll $(shell $(MOCKS) $*.c) --coverage
+tests: clean init $(UDEPS:%.c=$(LOGS)/%.difflog)
 	@$(COV) $(COVOPTS) $(COVOPTSXML) $(COVOPTSHTML) $(BUILD)
 	@find $(BUILD) \( -name "*.gcno" -or -name "*.gcda" -or -empty \) -delete
 	@$(INFO) ok coverage
