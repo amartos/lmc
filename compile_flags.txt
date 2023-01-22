@@ -3,3 +3,4 @@
 -Wextra
 -std=gnu99
 -Iinclude
+-D_UCODES
