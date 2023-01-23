@@ -25,6 +25,8 @@
 // clang-format on
 
 #include "lmc/computer.h"
+#include "lmc/hashtable.h"
+#include "lmc/lexer.h"
 
 // Fichier en-tête servant pour l'interface avec le reste du
 // programme.
@@ -35,24 +37,6 @@
 #include <search.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-// variables et fonctions du module flex nécessaires au bon
-// fonctionnement.
-extern FILE* yyin;
-extern char* yytext;
-extern int yylineno;
-int yylex(void);
-int yyerror(LmcRam* startpos, LmcRam* size, FILE* output, const char* restrict msg);
-
-/**
- * @since 0.1.0
- * @brief Traduit la chaîne donnée en un code d'opération.
- * @attention La fonction lève une erreur et stoppe la compilation en
- * cas de mot inconnu.
- * @param word Une chaîne contenant un mot.
- * @return le code correspondant au mot.
- */
-LmcOpCodes lmc_stringToOpCode(char* word) __attribute__((nonnull));
 
 /**
  * @since 0.1.0
@@ -101,7 +85,7 @@ void lmc_compilerWrite(FILE* output, LmcRam code, LmcRam value);
 // permettent de stocker des informations à utiliser plus tard
 // (startpos, size), ou de passer des paramètres aux fonctions
 // internes.
-%parse-param { LmcRam* startpos } { LmcRam* size } { FILE* output }
+%parse-param { LmcRam* startpos } { LmcRam* size } { FILE* output } { const char* restrict source }
 
 // Le point de départ de l'analyse.
 %start line
@@ -136,8 +120,11 @@ expr:
 // possibilité de l'adressage, qui doit être combiné à la valeur du
 // code d'opération.
 keyword:
-            KEYWORD { $$ = lmc_stringToOpCode($1); }
-|   KEYWORD POINTER { $$ = lmc_stringToOpCode($1) | lmc_stringToOpCode($2); }
+            KEYWORD { $$ = lmc_hashget($1, true), free($1); }
+|   KEYWORD POINTER {
+        $$ = lmc_hashget($1, true) | lmc_hashget($2, true);
+        free($1), free($2);
+   }
 |             VALUE { $$ = $1; }
 ;
 
@@ -146,21 +133,9 @@ keyword:
 // clang-format off
 
 /******************************************************************************
- * Gestion des données analysées.
+ * Gestion de la compilation.
  ******************************************************************************/
 // clang-format on
-
-/**
- * @name Traduction des mnémoniques en codes d'opération.
- * @{
- */
-
-/**
- * @since 0.1.0
- * @brief Génère une table de hachage des mots-clés des codes
- * d'opération.
- */
-static void lmc_makeOpCodesHashTable(void);
 
 /**
  * @since 0.1.0
@@ -173,10 +148,7 @@ static void lmc_compilerCleanup(void);
  * @since 0.1.0
  * @brief Table des correspondances mot-clé <> code d'opération.
  */
-static const struct {
-    char* key;
-    LmcOpCodes data;
-} lmc_compiler_mnemonics[LMC_MAXRAM] = {
+static LmcKeyword lmc_compiler_mnemonics[LMC_MAXRAM] = {
     {    "@",   VAR},
     {   "*@", INDIR},
     {  "add",   ADD},
@@ -190,14 +162,8 @@ static const struct {
     {  "brn",   BRN},
     {  "brz",   BRZ},
     { "stop",   HLT},
+    {   NULL,     0},
 };
-
-/** @} */
-
-/**
- * @name Gestion du fichier compilé.
- * @{
- */
 
 /**
  * @since 0.1.0
@@ -211,13 +177,6 @@ static const struct {
  */
 static FILE* lmc_compilerOpenFiles(const char* restrict source, const char* dest)
     __attribute__((nonnull (1)));
-
-/**
- * @var src
- * @since 0.1.0
- * @brief Chemin du fichier source.
- */
-static const char* src = NULL;
 
 /**
  * @var realdest
@@ -246,13 +205,14 @@ int lmc_compile(const char* source, const char* dest)
     // position de départ n'est donnée, ce sera celle par défaut.
     LmcRam startpos = LMC_MAXROM + 1, size = 0;
 
-    // on initialise la table de hachage pour la reconnaissance des
-    // mots-clés, et on programme sa destruction. Ces fonctions ne
-    // sont pas implémentées avec les attributs constructor ou
-    // destructor car la compilation est optionnelle; ainsi, elles ne
-    // sont appelées qu'au besoin.
-    lmc_makeOpCodesHashTable();
+    // On programme le nettoyage du module.
     atexit(lmc_compilerCleanup);
+
+    // On insère les mots-clés dans la table de hachage. On ne le fait
+    // pas avec une fonction à attribut "constructor" car le
+    // compilateur n'est pas nécéssairement utilisé à tous les coups,
+    // et il ne peut être utilisé qu'une fois.
+    lmc_hashInsertList(lmc_compiler_mnemonics);
 
     // On prépare les descripteur de fichiers des sources et
     // destination et on réserve l'espace pour les codes de départ et
@@ -266,7 +226,7 @@ int lmc_compile(const char* source, const char* dest)
     // On analyse le fichier source, et on inscrit les données
     // compilées dans le fichier de destination. On ferme ensuite la
     // source une fois l'analyse terminée.
-    status = yyparse(&startpos, &size, output);
+    status = yyparse(&startpos, &size, output, source);
     fclose(yyin);
 
     // On modifie les espaces réservés pour les informations sur le
@@ -282,38 +242,11 @@ int lmc_compile(const char* source, const char* dest)
     return status;
 }
 
-static void lmc_makeOpCodesHashTable(void)
-{
-    int status;
-    ENTRY entries[LMC_MAXRAM];
-
-    // on utilise hcreate ici car le programme n'a pas besoin de plus
-    // d'une table de hachage.
-    if (!(status = hcreate(LMC_MAXRAM)) && errno)
-        err(EXIT_FAILURE, "could not create hash table");
-    else if (!status && !errno) return; // Une table de hachage existe déjà.
-
-    // on entre les données dans la table.
-    // On utilise une variable intermédiaire ici car ENTRY nécessite
-    // un pointeur, or les codes d'opérations sont stockées dans une
-    // énumération.
-    for (int i = 0; i < LMC_MAXRAM; ++i)
-        if (lmc_compiler_mnemonics[i].key) {
-            entries[i].key = (char*) lmc_compiler_mnemonics[i].key;
-            entries[i].data = (void*) &(lmc_compiler_mnemonics[i].data);
-            if (!hsearch(entries[i], ENTER))
-                err(EXIT_FAILURE, "could not add '%s' item in hash table", lmc_compiler_mnemonics[i].key);
-        }
-}
-
-static void lmc_compilerCleanup(void) { hdestroy(); }
-
 static FILE* lmc_compilerOpenFiles(const char* restrict source, const char* dest)
 {
     FILE* output;
 
     // On modifie la source de stdin au fichier donné.
-    src = source;
     if (!(yyin = fopen(source, "r")))
         err(EXIT_FAILURE, "%s", source);
 
@@ -332,34 +265,4 @@ void lmc_compilerWrite(FILE* output, LmcRam code, LmcRam value)
             LMC_MAXDIGITS, value,
             realdest
         );
-}
-
-LmcOpCodes lmc_stringToOpCode(char* string)
-{
-    // on cherche le mot-clé donné dans la table de hachage. Cependant,
-    // si le mot-clé n'y est pas, c'est que le fichier source contient
-    // erreur.
-    ENTRY entry = { .key = string, };
-    ENTRY* retval = NULL;
-    if (!(retval = hsearch(entry, FIND)))
-        err(EXIT_FAILURE, "unknown item '%s'", string);
-    free(string); // la chaîne a été strdup()
-    return *((LmcOpCodes*) (retval->data));
-}
-
-// clang-format off
-
-/******************************************************************************
- * API de flex.
- ******************************************************************************/
-// clang-format on
-
-// cette fonction du module flex doit être implémentée par
-// l'utilisateur.
-int yyerror(LmcRam* startpos, LmcRam* size, FILE* output, const char* restrict msg){
-    (void) startpos;
-    (void) size;
-    (void) output;
-    fprintf(stderr, "%s: %s at line %i: '%s'\n", src, msg, yylineno, yytext);
-    return EXIT_FAILURE;
 }

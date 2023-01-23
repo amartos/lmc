@@ -143,6 +143,25 @@ typedef struct LmcBus {
 
 /******************************************************************************
  * @}
+ * @name Le debugger
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @struct LmcDebugger
+ * @since 0.1.0
+ * @brief La structure du debugger de l'ordinateur.
+ */
+typedef struct LmcDebugger {
+    LmcRam brk; /**< Registre contenant une adresse où forcer un arrêt. */
+    LmcRam op;  /**< Registre d'opération du debugger. */
+} LmcDebugger;
+
+// clang-format off
+
+/******************************************************************************
+ * @}
  * @name L'ordinateur en (e-)papier
  * @{
  ******************************************************************************/
@@ -154,6 +173,7 @@ typedef struct LmcBus {
  * @brief Structure complète de l'ordinateur.
  */
 typedef struct LmcComputer {
+    LmcDebugger dbg;   /**< Le debugger. */
     LmcMemory mem;     /**< La mémoire de l'ordinateur. */
     LmcControlUnit cu; /**< L'unité de contrôle. */
     LmcLogicUnit alu;  /**< L'unité arthmétique et logique. */
@@ -219,6 +239,20 @@ typedef enum __attribute__((__packed__)) LmcOpCodes {
     JUMP  = JMP,        /**< Saute vers une adresse (alias de #JMP).*/
     BRN   = JMP | INV,  /**< Saute si l'accumulateur est négatif. */
     BRZ   = JMP | NOT,  /**< Saute si l'accumulateur est nul.*/
+
+    // Instructions spécifiques au debugger.
+    // DUMP utilise WRT et non OUT car:
+    // - écrire dans la mémoire ne fait pas sens ici
+    // - la valeur OUT vaut "0|INV", ce qui signifierait que DUMP
+    // équivaudrait à DBGON... ce qui poserait un problème.
+    DBGON  = HLT   | INV, /**< Lancer une invite de commande du debugger. */
+    DBGOFF = DBGON | NOT, /**< Éteindre le debugger. */
+    BRK    = DBGON | ADD, /**< Enregistrer un point d'arrêt. */
+    FREE   = BRK   | NOT, /**< Enregistre l'adresse 00 comme point d'arrêt. */
+    RUN    = DBGON | JMP, /**< Continuer jusqu'au prochain point d'arrêt. */
+    STEP   = RUN   | NOT, /**< Exécuter la prochaine instruction et s'arrêter. */
+    DUMP   = DBGON | WRT, /**< Afficher les cellules de la mémoire. */
+    PRINT  = DUMP  | NOT, /**< Affiche une adresse et sa valeur en mémoire. */
 } LmcOpCodes;
 
 /**
