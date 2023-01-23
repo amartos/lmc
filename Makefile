@@ -54,6 +54,7 @@ CPPTREE		:= $(SRCTREE) $(UNITREE)
 vpath %.h    $(HDRTREE)
 vpath %.c    $(CPPTREE)
 vpath %.log  $(LOGS)
+vpath %.y    $(SRCTREE)
 vpath %.l    $(SRCTREE)
 
 
@@ -61,8 +62,12 @@ vpath %.l    $(SRCTREE)
 # Paramètres de compilation
 ###############################################################################
 
+YDEPS		:= $(shell find $(SRCS) -type f -name "*.y")
 LDEPS		:= $(shell find $(SRCS) -type f -name "*.l")
-CDEPS		:= $(LDEPS:%.l=$(notdir %.yy.c)) \
+# L'ordre YDEPS LDEPS est important pour la génération de fichiers en-têtes
+# par bison, utilisés par flex.
+CDEPS		:= $(YDEPS:%.y=$(notdir %.tab.c)) \
+				$(LDEPS:%.l=$(notdir %.yy.c)) \
 				$(shell find $(SRCS) -type f -name "*.c" -and -not -name "$(PROJECT).c")
 UDEPS		:= $(shell find $(UNITS) -type f -name "*.c")
 
@@ -86,7 +91,10 @@ COVHIGH		= 98
 COVLOW		= 75
 
 COV			= gcovr
-COVOPTS		:= -r $(SRCS) -u --exclude-directories "$(TESTS)"
+COVEXCL		:= --exclude-directories "$(TESTS)" \
+				-e ".*\.(tab|yy)\.c" \
+				-e ".*\.l"
+COVOPTS		:= -r $(SRCS) -u $(COVEXCL)
 COVOPTSXML	:= --xml-pretty --xml $(COVXML)
 COVOPTSHTML	:= --html-details $(COVHTML) \
 				--html-medium-threshold $(COVLOW) \
@@ -112,6 +120,10 @@ PDF			:= $(LATEX)/refman.pdf
 ###############################################################################
 # Cibles à patterns
 ###############################################################################
+
+%.tab.c: %.y
+	@mkdir -p $(dir $@)
+	@bison -d -o $@ $<
 
 %.yy.c: %.l
 	@mkdir -p $(dir $@)
@@ -154,6 +166,7 @@ $(PROJECT): CDEPS  += $(shell find $(SRCS) -type f -name $(PROJECT).c)
 $(PROJECT): CFLAGS += -O3
 $(PROJECT): %: clean init $(BIN)/%
 	@find $(BUILD) -empty -delete
+	@find $(SRCS) \( -name "*.tab.c" -or -name "*.tab.h" -or -name "*.yy.c" \) -delete
 	@$(INFO) ok $@
 
 # @brief Installe le logiciel compilé sur le système.
@@ -168,6 +181,7 @@ tests: LDLIBS += -L$(LIBS) -lsccroll $(shell $(MOCKS) $*.c) --coverage
 tests: clean init $(UDEPS:%.c=$(LOGS)/%.difflog)
 	@$(COV) $(COVOPTS) $(COVOPTSXML) $(COVOPTSHTML) $(BUILD)
 	@find $(BUILD) \( -name "*.gcno" -or -name "*.gcda" -or -empty \) -delete
+	@find $(SRCS) \( -name "*.tab.c" -or -name "*.tab.h" -or -name "*.yy.c" \) -delete
 	@$(INFO) ok coverage
 
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRC INCLUDES TESTS

@@ -1,0 +1,19 @@
+startabs xab
+// test de commentaire 1
+add x23
+load @ x53
+jump *@ xaf
+
+in x02 // test commentaire 2
+/*
+ * test de commentaire en bloc
+ */
+
+out @ xff
+
+/*********
+
+foo
+
+          */
+brz x56

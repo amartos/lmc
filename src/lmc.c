@@ -47,6 +47,7 @@ static LmcArguments cmdargs = { 0 };
 typedef enum LmcOptions {
     LICENSEOPT = 'w', /**< Afficher la licence. */
     VERSIONOPT = 'v', /**< Afficher la version. */
+    COMPILEOPT = 'c', /**< Compile au lieu d'exécuter. */
     MAXOPT = 0xff,    /**< Nombre maximal d'options. */
 } LmcOptions;
 
@@ -88,10 +89,11 @@ typedef struct LmcDoc {
  */
 static LmcDoc lmc_doc = {
     .argsdesc = "[FICHIER...]",
-    .options = {
-        {.name = "license", .group = -1, .arg = NULL, .key = LICENSEOPT, .doc = "Affiche la licence"},
-        {.name = "version", .group = -1, .arg = NULL, .key = VERSIONOPT, .doc = "Affiche la version"},
-        {     .name = NULL,  .group = 0, .arg = NULL,          .key = 0,                 .doc = NULL},
+    .options  = {
+        { .name = "license", .group = -1, .arg = NULL, .key = LICENSEOPT, .doc = "Affiche la licence" },
+        { .name = "version", .group = -1, .arg = NULL, .key = VERSIONOPT, .doc = "Affiche la version" },
+        { .name = "compile", .group = 1, .arg = "source", .key = COMPILEOPT, .doc = "Compile une source vers FICHIER" },
+        { .name = NULL, .group = 0, .arg = NULL, .key = 0, .doc = NULL },
     },
     .help =
     "\n"
@@ -163,6 +165,11 @@ int main(int argc, char** argv)
     };
     argp_parse(&argp, argc, argv, 0, 0, &cmdargs);
 
+    // On cherche à compiler un programme. L'exécution se fera dans un
+    // second temps, donc on quitte à ce point.
+    if (cmdargs.source)
+        return lmc_compile(cmdargs.source, *cmdargs.files);
+
     // Les fichiers donnés éventuellement en arguments sont des
     // programmes censément compilés. On allume l'ordinateur et on
     // lui donne les programmes. Si aucun fichier n'est donné, on
@@ -186,6 +193,7 @@ static error_t lmc_parseOpts(int key, char* arg, struct argp_state* state)
         cmdargs.files[cmdargs.max-1] = arg;
         lmc_increaseFilesList();
         break;
+    case COMPILEOPT: cmdargs.source = arg; break;
     case ARGP_KEY_END: break;
     default: return ARGP_ERR_UNKNOWN;
     }

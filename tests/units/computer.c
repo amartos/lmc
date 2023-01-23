@@ -57,6 +57,8 @@ int fscanf(FILE* restrict stream, const char* restrict format, ...)
     return trigger.errnum == ERRFSCANF && !trigger.delay-- ? EOF : status;
 }
 
+SCCROLL_MOCK(size_t, fread, void* ptr, size_t size, size_t nmemb, FILE* restrict stream)
+{ return lmc_mockErr(fread, ERRFREAD, 0, ptr, size, nmemb, stream); }
 
 // clang-format off
 

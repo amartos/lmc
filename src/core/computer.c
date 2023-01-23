@@ -260,7 +260,7 @@ LmcRam lmc_shell(const char* restrict filepath)
 
 static bool lmc_setInput(const char* restrict filepath)
 {
-    if (filepath && !(lmc_hal.bus.input = fopen(filepath, "r")))
+    if (filepath && !(lmc_hal.bus.input = fopen(filepath, "rb")))
         err(EXIT_FAILURE, "%s", filepath);
     else if (!filepath) {
         if (lmc_hal.bus.input != stdin) {
@@ -275,7 +275,7 @@ static bool lmc_setInput(const char* restrict filepath)
 
 static void lmc_busInput(void)
 {
-    bool error                   = false;
+    bool error = false, eof = false;
     char digits[LMC_MAXDIGITS+1] = { 0 };
 
     if (lmc_hal.bus.input == stdin) fprintf(lmc_hal.bus.output, "%s", lmc_hal.bus.prompt);
@@ -287,8 +287,12 @@ static void lmc_busInput(void)
     // qui validerait tout de même le scan), exemple: 'foobar' qui
     // donnerait '0f'. Ici, si la conversion échoue, on sait que l'un
     // des caractères au moins n'est pas un chiffre hexadécimal.
-    if (fscanf(lmc_hal.bus.input, "%2s", (char*)digits) < 1
-        || (error = lmc_convert(digits))) {
+    eof = lmc_hal.bus.input == stdin
+        ? (fscanf(lmc_hal.bus.input, "%2s", (char*)digits) < 1
+           || (error = lmc_convert(digits)))
+        : fread(&lmc_hal.bus.buffer, sizeof(LmcRam), 1, lmc_hal.bus.input) < 1;
+
+    if (eof) {
         if (error) {
             errno = errno ? errno : EINVAL;
             warn("Not a hexadecimal value: '%s'", digits);

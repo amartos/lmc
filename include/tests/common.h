@@ -62,6 +62,24 @@
  * @brief Programme malformé.
  */
 #define MALFORMED PROGS "error"
+
+/**
+ * @def DUMMY
+ * @since 0.1.0
+ * @brief Programme ne faisant rien de concrêt.
+ *
+ * Le code de ce programme implémente quelques syntaxes analysées par
+ * le compilateur. Le but est de vérifier que ces syntaxes sont bien
+ * prises en compte.
+ */
+#define DUMMY PROGS "dummy"
+
+/**
+ * @def DUMMYCODE
+ * @since 0.1.0
+ * @brief Code compilé attendu pour le programme #DUMMY.
+ */
+#define DUMMYCODE "\xab\x0c\x20\x23\x40\x53\xd0\xaf\x09\x02\x41\xff\x12\x56"
 /** @} */
 
 /**
@@ -84,6 +102,11 @@
 typedef enum LmcMocks {
     ERRFSCANF = 1, /**< fscanf */
     ERRFOPEN,      /**< fopen */
+    ERRFREAD,        /**< fread */
+    ERRFWRITE,       /**< fwrite */
+    ERRHCREATE,      /**< hcreate */
+    ERRHSEARCHENTER, /**< hsearch (action ENTER) */
+    ERRHSEARCHFIND,  /**< hsearch (action FIND) */
 } LmcMocks;
 
 /**

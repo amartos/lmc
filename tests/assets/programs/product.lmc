@@ -1,0 +1,23 @@
+startabs x30
+
+// Les emplacements de stockages de nombres.
+x00     x00  // 30 les deux nombres donnés
+x00     x00  // 32 le résultat
+
+// main
+in    @ x30  // 34 input du premier nombre
+in    @ x31  // 36 input du second nombre
+jump    x3e  // 38 appel de la fonction
+out   @ x32  // 3a sortie et affichage du résultat
+stop    x00  // 3c arrête l'ordi en renvoyant 0
+
+// Fonction de multiplication.
+load  @ x32  // 3e on charge le résultat (début de boucle)
+add   @ x30  // 40 on ajoute le premier nombre
+store @ x32  // 42 on stocke le résultat de l'opération
+load  @ x31  // 44 on charge le second nombre
+sub     x01  // 46 on décrémente le second nombre
+brz     x3a  // 48 si le résultat est nul, ou...
+brn     x3a  // 4a ... s'il est négatif, on arrête
+store @ x31  // 4c on stocke le résultat
+jump    x3e  // 4e on recommence la boucle

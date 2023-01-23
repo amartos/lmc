@@ -9,8 +9,12 @@
  * @copyright GNU General Public License v3
  * @compilation
  * @code{.sh}
+ * bison -d -o compiler.tab.c src/compiler/compiler.y
+ * flex -o compiler.yy.c src/compiler/compiler.l
  * gcc -xc -Wall -Wextra -std=gnu99 -Iinclude \
- *     src/core/computer.c src/lmc.c -o build/bin/lmc
+ *     src/core/computer.c \
+ *     compiler.tab.c compiler.yy.c \
+ *     src/lmc.c -o build/bin/lmc
  * @endcode
  *
  * @addtogroup LMC L'ordinateur en papier
@@ -21,6 +25,7 @@
 #define LMC_H_
 
 #include "lmc/computer.h" // Le module principal de l'ordinateur en papier.
+#include "lmc/compiler.h" // Le module de compilation des programmes.
 
 #include <argp.h>   // pour la gestion des arguments
 #include <stdio.h>
