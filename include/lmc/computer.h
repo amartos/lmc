@@ -51,6 +51,13 @@ typedef unsigned char LmcRam;
 #define LMC_MAXRAM 0x100
 
 /**
+ * @def LMC_SIGN
+ * @since 0.1.0
+ * @brief Un masque pour la position du bit de signe des nombres.
+ */
+#define LMC_SIGN (LmcRam)(LMC_MAXRAM >> 1)
+
+/**
  * @def LMC_MAXROM
  * @since 0.1.0
  * @brief Adresse de fin de la mémoire en lecture seule.
@@ -223,9 +230,6 @@ typedef enum __attribute__((__packed__)) LmcOpCodes {
     JUMP  = JMP,        /**< Saute vers une adresse (alias de #JMP).*/
     BRN   = JMP | INV,  /**< Saute si l'accumulateur est négatif. */
     BRZ   = JMP | NOT,  /**< Saute si l'accumulateur est nul.*/
-
-    // Autres
-    SIGN  = 0x80,  /**< Bit de signe pour les nombres signés. */
 } LmcOpCodes;
 
 /**

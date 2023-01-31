@@ -457,7 +457,7 @@ static bool lmc_phaseTwo(void)
     case IN:    lmc_useries(WINPUT, INTOWR, NULL); goto op_write;
     case STORE: lmc_ucode(ACTOWR);
     op_write:   lmc_ucode(WRTOSV); break;
-    case BRN:   if (!(lmc_hal.alu.acc & SIGN)) break; goto op_jump;
+    case BRN:   if (!(lmc_hal.alu.acc & LMC_SIGN)) break; goto op_jump;
     case BRZ:   if (lmc_hal.alu.acc != 0) break; goto op_jump;
     case JUMP:
     op_jump:    lmc_ucode(WRTOPC); return false;
@@ -566,7 +566,7 @@ static bool lmc_phaseTwo(void)
             'w'
         );
         break;
-    case BRN:   if (!(lmc_hal.alu.acc & SIGN)) break; goto op_jump;
+    case BRN:   if (!(lmc_hal.alu.acc & LMC_SIGN)) break; goto op_jump;
     case BRZ:   if (operation == BRZ && lmc_hal.alu.acc != 0) break; goto op_jump;
     case JUMP:
     op_jump:    lmc_hal.cu.pc = lmc_hal.mem.cache.wr; return false;
