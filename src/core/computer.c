@@ -116,6 +116,13 @@ static void lmc_phaseThree(void);
 // clang-format on
 
 /**
+ * @def LMC_PROMPT
+ * @since 0.1.0
+ * @brief L'invite de commandes.
+ */
+#define LMC_PROMPT "? >"
+
+/**
  * @since 0.1.0
  * @brief Récupère un code exadécimal à deux chiffres sur
  * LmcBus::input, et le stocke dans LmcComputer::bus::buffer.
@@ -211,7 +218,7 @@ static LmcComputer lmc_hal = {0};
  * @brief Un modèle de l'ordinateur à l'état initial.
  */
 static const LmcComputer lmc_template = {
-    .bus = { .prompt = "? >", },
+    .bus = { .prompt = LMC_PROMPT, },
     // le bootstrap
     .mem.ram = {
         // Le bootstrap.
