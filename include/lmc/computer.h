@@ -133,6 +133,9 @@ typedef struct LmcBus {
     FILE* output;       /**< La sortie. */
     const char* prompt; /**< L'invite de commande. */
     LmcRam buffer;      /**< Un buffer entre les E/S et la mémoire. */
+    bool newline;       /**< Drapeau indiquant s'il faut afficher un
+                         * caractère de fin de ligne avant l'output à
+                         * venir. */
 } LmcBus;
 
 // clang-format off

@@ -157,6 +157,15 @@ static bool lmc_setInput(const char* restrict filepath);
 static int lmc_convert(const char* restrict number) __attribute__((nonnull));
 
 /**
+ * @def lmc_busPrint
+ * @since 0.1.0
+ * @brief Affiche un message sur LmcComputer::bus::output.
+ * @param fmt Une chaîne de formatage type printf.
+ * @param ... Les arguments de la chaîne de formatage.
+ */
+#define lmc_busPrint(fmt, ...) fprintf(lmc_hal.bus.output, fmt, ##__VA_ARGS__)
+
+/**
  * @since 0.1.0
  * @brief Affiche la valeur de LmcComputer::mem::cache::wr sur
  * LmcComputer::bus::output.
@@ -340,7 +349,11 @@ static int lmc_convert(const char* restrict number)
 
 static void lmc_busOutput(void)
 {
-    fprintf(lmc_hal.bus.output, LMC_WRDVAL);
+    if (lmc_hal.bus.newline) {
+        lmc_busPrint("\n");
+        lmc_hal.bus.newline = false;
+    }
+    lmc_busPrint(LMC_WRDVAL);
 }
 
 static void lmc_calc(void)
