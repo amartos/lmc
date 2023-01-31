@@ -327,7 +327,7 @@ void lmc_compilerWrite(FILE* output, LmcRam code, LmcRam value)
 {
     LmcRam hexcodes[2] = { code, value };
     if (fwrite(&hexcodes, sizeof(LmcRam), 2, output) != 2)
-        err(EXIT_FAILURE, "could not write codes (%0*hhx,%0*hhx) in %s",
+        err(EXIT_FAILURE, "could not write codes (" LMC_HEXFMT "," LMC_HEXFMT ") in %s",
             LMC_MAXDIGITS, code,
             LMC_MAXDIGITS, value,
             realdest

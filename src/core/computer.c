@@ -123,6 +123,14 @@ static void lmc_phaseThree(void);
 #define LMC_PROMPT "? >"
 
 /**
+ * @def LMC_WRDVAL
+ * @since 0.1.0
+ * @brief La valeur contenue dans LmcComputer::mem::cache::wr dans un
+ * format d'affichage avec les fonctions de la famille @c printf.
+ */
+#define LMC_WRDVAL LMC_HEXFMT, LMC_MAXDIGITS, lmc_hal.mem.cache.wr
+
+/**
  * @since 0.1.0
  * @brief Récupère un code exadécimal à deux chiffres sur
  * LmcBus::input, et le stocke dans LmcComputer::bus::buffer.
@@ -283,7 +291,7 @@ static bool lmc_setInput(const char* restrict filepath)
 static void lmc_busInput(void)
 {
     bool error = false, eof = false;
-    char digits[LMC_MAXDIGITS+1] = { 0 };
+    char digits[BUFSIZ] = { 0 };
 
     if (lmc_hal.bus.input == stdin) fprintf(lmc_hal.bus.output, "%s", lmc_hal.bus.prompt);
 
@@ -295,7 +303,7 @@ static void lmc_busInput(void)
     // donnerait '0f'. Ici, si la conversion échoue, on sait que l'un
     // des caractères au moins n'est pas un chiffre hexadécimal.
     eof = lmc_hal.bus.input == stdin
-        ? (fscanf(lmc_hal.bus.input, "%2s", (char*)digits) < 1
+        ? (fscanf(lmc_hal.bus.input, "%s", (char*)digits) < 1
            || (error = lmc_convert(digits)))
         : fread(&lmc_hal.bus.buffer, sizeof(LmcRam), 1, lmc_hal.bus.input) < 1;
 
@@ -323,12 +331,16 @@ static int lmc_convert(const char* restrict number)
     char* endptr;
     errno = 0;
     lmc_hal.bus.buffer = (LmcRam) strtoul(number, &endptr, 16);
-    return errno || *endptr ? EXIT_FAILURE : EXIT_SUCCESS;
+    return strlen(number) > LMC_MAXDIGITS
+        || errno
+        || *endptr
+        ? EXIT_FAILURE
+        : EXIT_SUCCESS;
 }
 
 static void lmc_busOutput(void)
 {
-    fprintf(lmc_hal.bus.output, "%*x", LMC_MAXDIGITS, lmc_hal.mem.cache.wr);
+    fprintf(lmc_hal.bus.output, LMC_WRDVAL);
 }
 
 static void lmc_calc(void)
@@ -349,7 +361,7 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
         if (address < LMC_MAXROM) {
             lmc_hal.on         = false;
             errno              = EFAULT;
-            warn("0x%*x: read only", LMC_MAXDIGITS, address);
+            warn(LMC_HEXFMT ": read only", LMC_MAXDIGITS, address);
             return;
         }
         lmc_hal.mem.ram[address] = *value;

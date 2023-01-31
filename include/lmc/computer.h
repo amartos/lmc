@@ -76,6 +76,14 @@ typedef unsigned char LmcRam;
 #define LMC_MAXDIGITS (int)(sizeof(LmcRam) * 2)
 
 /**
+ * @def LMC_HEXFMT
+ * @since 0.1.0
+ * @brief Le format utilisé pour les nombres hexadécimaux affichés.
+ * @param * LMC_MAXDIGITS
+ */
+#define LMC_HEXFMT "%0*x"
+
+/**
  * @struct LmcMemory
  * @since 0.1.0
  * @brief Structure de la mémoire de la machine.
