@@ -116,6 +116,8 @@ typedef struct LmcComputer {
  * @{
  * @param filepath Le chemin d'un fichier compilé à exécuter, ou NULL
  * pour entrer en mode de programmation interactive.
+ * @param bootstrap Un fichier compilé contenant le bootstrap à
+ * utiliser.
  * @return La valeur du registre mot à l'extinction.
  ******************************************************************************/
 // clang-format on
@@ -125,19 +127,19 @@ typedef struct LmcComputer {
  * @since 0.1.0
  * @brief Type des fonctions d'exécution de l'ordinateur.
  */
-typedef LmcRam (*LmcExec)(const char* filepath);
+typedef LmcRam (*LmcExec)(const char* bootstrap, const char* filepath);
 
 /**
  * @since 0.1.0
  * @brief Exécute un programme sans le debugger.
  */
-LmcRam lmc_shell(const char* restrict filepath);
+LmcRam lmc_shell(const char* restrict bootstrap, const char* restrict filepath);
 
 /**
  * @since 0.1.0
  * @brief Exécute un programme avec le debugger.
  */
-LmcRam lmc_dbgShell(const char* restrict filepath);
+LmcRam lmc_dbgShell(const char* restrict bootstrap, const char* restrict filepath);
 
 // clang-format off
 /******************************************************************************

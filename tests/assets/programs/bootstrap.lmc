@@ -1,0 +1,19 @@
+// commande indirection argument // addresse commande
+in     @ x20 // 00
+in     @ x22 // 02
+load   @ x20 // 04
+store  @ x21 // 06
+in    *@ x21 // 08
+load   @ x22 // 0a
+sub      x01 // 0c
+brz      x1f // 0e
+store  @ x22 // 10
+load   @ x21 // 12
+add      x01 // 14
+jump     x06 // 16
+x00      x00 // 18
+x00      x00 // 1a
+x00      x00 // 1c
+// Puisque le compilateur n'accepte pas (encore?) des mots en position
+// droite, on efface le "jump" pour son code 0x10.
+x00      x10 // 1e

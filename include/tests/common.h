@@ -36,6 +36,28 @@
 #define UNDEFINED "foobar"
 
 /**
+ * @def _BOOTSTRAP
+ * @since 0.1.0
+ * @brief Programme compilé du bootstrap.
+ * @param ... Insère un préfixe au nom du fichier.
+ */
+#define _BOOTSTRAP(...) PROGS __VA_ARGS__ "bootstrap"
+
+/**
+ * @def BOOTSTRAP
+ * @since 0.1.0
+ * @brief Programme compilé du bootstrap de base.
+ */
+#define BOOTSTRAP _BOOTSTRAP()
+
+/**
+ * @def ALTBOOTSTRAP
+ * @since 0.1.0
+ * @brief Programme compilé d'un bootstrap de tests.
+ */
+#define ALTBOOTSTRAP _BOOTSTRAP("alt")
+
+/**
  * @def PRODUCT
  * @since 0.1.0
  * @brief Programme calculant le produit de deux entiers.

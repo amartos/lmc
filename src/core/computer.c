@@ -28,9 +28,18 @@
  * pour entrer en mode de programmation interactive.
  * @param debug Drapeau indiquant d'allumer (@c true) ou pas (@c
  * false) le debugger.
+ * @param bootstrap Un fichier compilé contenant le bootstrap à
+ * utiliser.
  * @return La valeur du registre mot à l'extinction.
  */
-static LmcRam lmc_exec(const char* restrict filepath, bool debug);
+static LmcRam lmc_exec(const char* restrict bootstrap, const char* restrict filepath, bool debug);
+
+/**
+ * @since 0.1.0
+ * @brief Charge un bootstrap dans l'ordinateur.
+ * @param path Le chemin du fichier compilé contenant le bootstrap.
+ */
+static void lmc_bootstrap(const char* restrict path) __attribute__((nonnull));
 
 // clang-format off
 
@@ -362,15 +371,20 @@ static const LmcComputer lmc_template = {
  ******************************************************************************/
 // clang-format on
 
-LmcRam lmc_shell(const char* restrict filepath) { return lmc_exec(filepath, false); }
+LmcRam lmc_shell(const char* restrict bootstrap, const char* restrict filepath)
+{ return lmc_exec(bootstrap, filepath, false); }
 
-LmcRam lmc_dbgShell(const char* restrict filepath) { return lmc_exec(filepath, true); }
+LmcRam lmc_dbgShell(const char* restrict bootstrap, const char* restrict filepath)
+{ return lmc_exec(bootstrap, filepath, true); }
 
-static LmcRam lmc_exec(const char* restrict filepath, bool debug)
+static LmcRam lmc_exec(const char* restrict bootstrap, const char* restrict filepath, bool debug)
 {
     // on reset l'ordinateur pour éviter de mélanger les données de
     // plusieurs programmes.
     lmc_hal = lmc_template;
+
+    // On charge le bootstrap.
+    lmc_bootstrap(bootstrap);
 
     // stdin et stdout ne sont pas des constantes, donc assignables
     // uniquement en runtime. Si aucun programme n'est donné au
@@ -387,6 +401,20 @@ static LmcRam lmc_exec(const char* restrict filepath, bool debug)
         lmc_phaseOne(), lmc_phaseTwo(false) ? lmc_phaseThree() : 0;
     }
     return lmc_hal.mem.cache.wr; // code de status du programme
+}
+
+static void lmc_bootstrap(const char* restrict path)
+{
+    FILE* file = fopen(path, "rb");
+    // Puisque le bootstrap est compilé avec le même programme,
+    // les deux premières valeurs seront la position initiale et
+    // la taille du programme. Or, on sait où le programme doit se
+    // situer, et la taille importe peu. Donc, on les saute.
+    if (!file
+        || fseek(file, sizeof(LmcRam)*2, SEEK_SET)
+        || (!fread(lmc_hal.mem.ram, sizeof(LmcRam), LMC_MAXROM, file) && ferror(file)))
+        err(EXIT_FAILURE, "%s: could not load bootstrap", path);
+    fclose(file);
 }
 
 // clang-format off

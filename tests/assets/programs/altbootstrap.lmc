@@ -1,0 +1,16 @@
+// commande indirection argument // addresse commande
+in     @ x20 // 00
+in     @ x22 // 02
+load   @ x20 // 04
+store  @ x21 // 06
+in    *@ x21 // 08
+load   @ x22 // 0a
+sub      x01 // 0c
+brz      x18 // 0e
+store  @ x22 // 10
+load   @ x21 // 12
+add      x01 // 14
+jump     x06 // 16
+out      xff // 18
+out      xff // 1a
+jump   @ x20 // 1c

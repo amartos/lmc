@@ -97,7 +97,7 @@ SCCROLL_TEST(
         },
      }
 )
-{ assert(!lmc_shell(CMDLINE)); }
+{ assert(!lmc_shell(BOOTSTRAP, CMDLINE)); }
 
 SCCROLL_TEST(
     file_prog,
@@ -120,11 +120,11 @@ SCCROLL_TEST(
     }
 )
 {
-    assert(!lmc_shell(PRODUCT));
-    assert(!lmc_shell(PRODUCT));
-    assert(!lmc_shell(QUOTIENT));
-    assert(!lmc_shell(QUOTIENT));
-    assert(lmc_shell(QUOTIENT) == 1);
+    assert(!lmc_shell(BOOTSTRAP, PRODUCT));
+    assert(!lmc_shell(BOOTSTRAP, PRODUCT));
+    assert(!lmc_shell(BOOTSTRAP, QUOTIENT));
+    assert(!lmc_shell(BOOTSTRAP, QUOTIENT));
+    assert(lmc_shell(BOOTSTRAP, QUOTIENT) == 1);
 }
 
 SCCROLL_TEST(
@@ -134,7 +134,7 @@ SCCROLL_TEST(
         [STDOUT_FILENO] = { .content.blob = "? >" },
     }
 )
-{ assert(!lmc_shell(CMDLINE)); }
+{ assert(!lmc_shell(BOOTSTRAP, CMDLINE)); }
 
 SCCROLL_TEST(
     file_not_found,
@@ -143,7 +143,7 @@ SCCROLL_TEST(
         [STDERR_FILENO] = { .content.blob = "computer: foobar: No such file or directory" },
     }
 )
-{ assert(lmc_shell(UNDEFINED)); }
+{ assert(lmc_shell(BOOTSTRAP, UNDEFINED)); }
 
 SCCROLL_TEST(
     fopen_errors_handling,
@@ -152,7 +152,7 @@ SCCROLL_TEST(
         [STDERR_FILENO] = { .content.blob = "computer: " PRODUCT ": Success\n" },
      }
 )
-{ trigger.errnum = ERRFOPEN, lmc_shell(PRODUCT); }
+{ trigger.errnum = ERRFOPEN, lmc_shell(BOOTSTRAP, PRODUCT); }
 
 SCCROLL_TEST(
     rom_error,
@@ -173,7 +173,7 @@ SCCROLL_TEST(
         },
      }
 )
-{ lmc_shell(CMDLINE); }
+{ lmc_shell(BOOTSTRAP, CMDLINE); }
 
 SCCROLL_TEST(
     notanumber_errors_handling,
@@ -197,7 +197,7 @@ SCCROLL_TEST(
         },
      }
 )
-{ assert(!lmc_shell(CMDLINE)); }
+{ assert(!lmc_shell(BOOTSTRAP, CMDLINE)); }
 
 SCCROLL_TEST(
     fscanf_errors_handling,
@@ -220,7 +220,7 @@ SCCROLL_TEST(
         [STDERR_FILENO] = { .content.blob = "computer: Success" },
      }
 )
-{ trigger.errnum = ERRFSCANF, assert(!lmc_shell(CMDLINE)); }
+{ trigger.errnum = ERRFSCANF, assert(!lmc_shell(BOOTSTRAP, CMDLINE)); }
 
 SCCROLL_TEST(
     fread_errors_handling,
@@ -239,4 +239,22 @@ SCCROLL_TEST(
         [STDERR_FILENO] = { .content.blob = "computer: Success" },
      }
 )
-{ trigger.errnum = ERRFREAD, assert(!lmc_shell(PRODUCT)); }
+{ trigger.errnum = ERRFREAD, assert(!lmc_shell(BOOTSTRAP, PRODUCT)); }
+
+SCCROLL_TEST(
+    chbootstrap,
+    .std = {
+        [STDIN_FILENO]  = { .content.blob =
+            // Un programme simple, car ce n'est pas le sujet de test
+            // ici.
+            "30\n02\n"
+            "04\n00\n" // stop 00
+        },
+        [STDOUT_FILENO] = { .content.blob =
+            "? >? >"
+            "? >? >"
+            "ffff"
+        },
+    }
+)
+{ assert(!lmc_shell(ALTBOOTSTRAP, NULL)); }
