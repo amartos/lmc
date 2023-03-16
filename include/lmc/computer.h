@@ -41,39 +41,16 @@
 typedef unsigned char LmcRam;
 
 /**
- * @def LMC_MAXRAM
+ * @enum LmcMemoryCaracs
  * @since 0.1.0
- * @brief Quantité de mémoire maximale de l'ordinateur (en octets).
- * @todo Utiliser une variable, ce qui permettrait de modifier la
- * taille de la mémoire au moment de l'exécution.
+ * @brief Caractéristiques numériques de la mémoire de l'ordinateur.
  */
-// 0x100 == 256 en base 10
-#define LMC_MAXRAM 0x100
-
-/**
- * @def LMC_SIGN
- * @since 0.1.0
- * @brief Un masque pour la position du bit de signe des nombres.
- */
-#define LMC_SIGN (LmcRam)(LMC_MAXRAM >> 1)
-
-/**
- * @def LMC_MAXROM
- * @since 0.1.0
- * @brief Adresse de fin de la mémoire en lecture seule.
- * @attention Doit être inférieure à #MAX_RAM.
- * @todo Utiliser une fonction pour déterminer une taille variable,
- * surtout si #LMC_MAXRAM est stocké dans une variable.
- */
-// 0x20 == 32 en base 10
-#define LMC_MAXROM (LmcRam) 0x20
-
-/**
- * @def LMC_MAXDIGITS
- * @since 0.1.0
- * @brief Nombre maximal de chiffres d'une adresse de la mémoire.
- */
-#define LMC_MAXDIGITS (int)(sizeof(LmcRam) * 2)
+typedef enum LmcMemoryCaracs {
+    LMC_MAXRAM    = 0x100,              /**< Quantité de mémoire maximale (octets). */
+    LMC_MAXROM    = 0x20,               /**< Quantité de mémoire en lecture seule (octets). */
+    LMC_MAXDIGITS = sizeof(LmcRam) * 2, /**< Nombre de chiffres des valeurs de la mémoire. */
+    LMC_SIGN      = LMC_MAXRAM >> 1,    /**< Masque pour le bit de signe. */
+} LmcMemoryCaracs;
 
 /**
  * @def LMC_HEXFMT
