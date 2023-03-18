@@ -136,7 +136,7 @@ static void lmc_phaseThree(void);
  * @brief La valeur contenue dans LmcComputer::mem::cache::wr dans un
  * format d'affichage avec les fonctions de la famille @c printf.
  */
-#define LMC_WRDVAL LMC_HEXFMT " ", LMC_MAXDIGITS, lmc_hal.mem.cache.wr
+#define LMC_WRDVAL LMC_HEXFMT, LMC_MAXDIGITS, lmc_hal.mem.cache.wr
 
 /**
  * @since 0.1.0
@@ -235,32 +235,6 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode) __attribute__
 
 /******************************************************************************
  * @}
- * @name Fonctions du debugger.
- * @{
- ******************************************************************************/
-// clang-format on
-
-/**
- * @since 0.1.0
- * @brief Lance l'étape du debugger.
- * @return @c true pour passer à l'étape suivante, @c false pour
- * rester dans le mode debug.
- */
-static bool lmc_debug(void);
-
-/**
- * @since 0.1.0
- * @brief Affiche l'adresse et la valeur de la cellule mémoire située
- * à l'adresse LmcComputer::mem::cache::sr.
- * @param address Indique si l'adresse doit être affichée (@c true) ou
- * non (@c false). Une nouvelle ligne est affichée avant l'adresse.
- */
-static void lmc_dbgPrint(bool address);
-
-// clang-format off
-
-/******************************************************************************
- * @}
  * L'ordinateur et son bootstrap.
  ******************************************************************************/
 
@@ -320,12 +294,7 @@ LmcRam lmc_shell(const char* restrict filepath)
 
     // On exécute le programme.
     lmc_hal.on = true; // Hello Dave. You are looking well today.
-    while (lmc_hal.on) {
-        while(!lmc_debug());
-        lmc_dump();
-        lmc_phaseOne();
-        lmc_phaseTwo() ? lmc_phaseThree() : 0;
-    }
+    while (lmc_hal.on) lmc_dump(), lmc_phaseOne(), lmc_phaseTwo() ? lmc_phaseThree() : 0;
     return lmc_hal.mem.cache.wr; // code de status du programme
 }
 
@@ -457,55 +426,6 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
         break;
     default: break;
     }
-}
-
-static bool lmc_debug(void)
-{
-    switch(lmc_hal.dbg.op & ~(INDIR))
-    {
-    case DBGOFF: break;
-    case STEP:   lmc_hal.dbg.op = DBGON; break;
-    case RUN:    if (lmc_hal.cu.pc != lmc_hal.dbg.brk) break; goto dbg_continue;
-    case PRINT:
-        lmc_busInput();
-        lmc_hal.mem.cache.sr = lmc_hal.bus.buffer;
-        lmc_hal.alu.opcode = lmc_hal.dbg.op;
-        lmc_indirection(lmc_hal.alu.opcode & INDIR);
-        lmc_dbgPrint(true);
-        goto dbg_continue;
-    case DUMP:
-        lmc_hal.mem.cache.sr = 0;
-        do {
-            lmc_dbgPrint(!(lmc_hal.mem.cache.sr & 1));
-        } while (++lmc_hal.mem.cache.sr);
-        goto dbg_continue;
-    case FREE: lmc_hal.dbg.brk = 0; goto dbg_continue;
-    case BRK:  lmc_busInput(), lmc_hal.dbg.brk = lmc_hal.bus.buffer;
-    dbg_continue: lmc_hal.dbg.op = DBGON; __attribute__((fallthrough));
-    case DBGON:
-        lmc_hal.mem.cache.sr = lmc_hal.cu.pc;
-        lmc_dbgPrint(true);
-        lmc_busInput();
-        lmc_hal.dbg.op = lmc_hal.bus.buffer;
-        return false;
-    default:
-        lmc_hal.alu.opcode = lmc_hal.dbg.op;
-        lmc_hal.dbg.op = DBGON;
-        return lmc_phaseTwo();
-    }
-
-    return true;
-}
-
-static void lmc_dbgPrint(bool address)
-{
-    if (address) {
-        lmc_hal.bus.newline = true;
-        lmc_hal.mem.cache.wr = lmc_hal.mem.cache.sr;
-        lmc_busOutput();
-    }
-    lmc_hal.alu.opcode = OUT;
-    lmc_phaseTwo();
 }
 
 #ifdef _UCODES
