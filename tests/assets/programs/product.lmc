@@ -12,12 +12,11 @@ out   @ x32  // 3a sortie et affichage du résultat
 stop    x00  // 3c arrête l'ordi en renvoyant 0
 
 // Fonction de multiplication.
-load  @ x32  // 3e on charge le résultat (début de boucle)
-add   @ x30  // 40 on ajoute le premier nombre
-store @ x32  // 42 on stocke le résultat de l'opération
-load  @ x31  // 44 on charge le second nombre
-sub     x01  // 46 on décrémente le second nombre
-brz     x3a  // 48 si le résultat est nul, ou...
-brn     x3a  // 4a ... s'il est négatif, on arrête
-store @ x31  // 4c on stocke le résultat
-jump    x3e  // 4e on recommence la boucle
+load  @ x31  // 3e on charge le second nombre (le compteur)
+brz     x3a  // 40 si le résultat est nul, on arrête
+sub     x01  // 42 on décrémente le compteur
+store @ x31  // 44 on stocke le compteur
+load  @ x32  // 46 on charge le résultat
+add   @ x30  // 48 on ajoute le premier nombre
+store @ x32  // 4a on stocke le nouveau résultat
+jump    x3e  // 4c on recommence la boucle
