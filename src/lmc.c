@@ -175,7 +175,7 @@ int main(int argc, char** argv)
     // lui donne les programmes. Si aucun fichier n'est donné, on
     // entre en mode interactif et l'utilisateur pourra taper des
     // commandes via le prompt.
-    for (size_t i = 0; i < cmdargs.max; ++i)
+    for (size_t i = 0; i < cmdargs.max && i <= cmdargs.cur && !status; ++i)
         status = lmc_shell(cmdargs.files[i]);
 
     // Le code de status est celui du dernier programme exécuté.
