@@ -210,8 +210,9 @@ static void lmc_calc(void);
  * @since 0.1.0
  * @brief Retrouve l'opérande de l'opération stockée en mémoire, en
  * fonction du niveau d'indirection indiqué.
+ * @param type Le type d'indirection voulu.
  */
-static void lmc_indirection(void);
+static void lmc_indirection(LmcRam type);
 
 /**
  * @since 0.1.0
@@ -394,10 +395,10 @@ static void lmc_calc(void)
     }
 }
 
-static void lmc_indirection(void)
+static void lmc_indirection(LmcRam type)
 {
     // On va chercher la valeur de l'opérande.
-    switch (lmc_hal.alu.opcode & INDIR) {
+    switch (type) {
 #ifdef _UCODES
     case INDIR: lmc_useries(SVTOWR, WRTOAD, ADTOSR, NULL); __attribute__((fallthrough));
     case VAR:   lmc_useries(SVTOWR, WRTOAD, ADTOSR, NULL); __attribute__((fallthrough));
@@ -444,6 +445,7 @@ static bool lmc_phaseTwo(void)
     // celui de l'opération.
     LmcRam opcode    = 0;
     LmcRam operation = lmc_hal.alu.opcode & ~(INDIR);
+    LmcRam value     = lmc_hal.alu.opcode & INDIR;
 
     // En codant "à la brute", on obtient normalement ce gros switch
     // prenant en compte toutes les possibilités de combinaisons
@@ -509,7 +511,7 @@ static bool lmc_phaseTwo(void)
 
     // On va chercher la valeur de l'opérande.
     lmc_ucode(PCTOSR);
-    lmc_indirection();
+    lmc_indirection(value);
 
     // On lance l'opération.
     switch (operation) {
