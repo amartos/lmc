@@ -27,6 +27,7 @@
  * @brief Structure les valeurs des arguments du programme.
  */
 typedef struct LmcArguments {
+    size_t cur;   /**< Index courant de LmcArguments::files. */
     size_t max;   /**< Taille max de LmcArguments::files. */
     char** files; /**< Les chemins de fichiers supplémentaires donnés en arguments. */
     char* source; /**< Le fichier source du programme. */
@@ -37,7 +38,7 @@ typedef struct LmcArguments {
  * @since 0.1.0
  * @brief Les arguments donnés sur la ligne de commande.
  */
-static LmcArguments cmdargs = { 0 };
+static LmcArguments cmdargs = { .cur = -1, };
 
 /**
  * @enum LmcOptions
@@ -156,7 +157,6 @@ int main(int argc, char** argv)
 
     // On initialise les options et leur structure d'accueil, et on
     // analyse la ligne de commande.
-    lmc_increaseFilesList();
     struct argp argp = {
         .options = lmc_doc.options,
         .parser = lmc_parseOpts,
@@ -190,8 +190,8 @@ static error_t lmc_parseOpts(int key, char* arg, struct argp_state* state)
     case VERSIONOPT: puts(LMC_VERSION); exit(EXIT_SUCCESS);
     case LICENSEOPT: puts(LMC_LICENSE); exit(EXIT_SUCCESS);
     case ARGP_KEY_ARG:
-        cmdargs.files[cmdargs.max-1] = arg;
-        lmc_increaseFilesList();
+        if (cmdargs.cur >= cmdargs.max) lmc_increaseFilesList();
+        cmdargs.files[++cmdargs.cur] = arg;
         break;
     case COMPILEOPT: cmdargs.source = arg; break;
     case ARGP_KEY_END: break;
@@ -202,12 +202,14 @@ static error_t lmc_parseOpts(int key, char* arg, struct argp_state* state)
 
 static void lmc_increaseFilesList(void)
 {
-    char** new = cmdargs.files
-        ? reallocarray(cmdargs.files, ++cmdargs.max, sizeof(char*))
-        : calloc(++cmdargs.max, sizeof(char*));
+    // *2 pour limiter les appels à reallocarray (on augmente la
+    // taille de la table de manière exponentielle).
+    int newsize = cmdargs.max ? cmdargs.max * 2 : 1;
+    char** new = reallocarray(cmdargs.files, newsize, sizeof(char*));
     if (!new) err(EXIT_FAILURE, "could not allocate for file list");
+    memset(&new[cmdargs.max], 0, (newsize - cmdargs.max)*sizeof(char*));
     cmdargs.files = new;
-    cmdargs.files[cmdargs.max-1] = NULL;
+    cmdargs.max = newsize;
 }
 
 static void lmc_cleanup(void) { free(cmdargs.files); }
