@@ -169,6 +169,11 @@ $(PROJECT): %: clean init $(BIN)/%
 	@find $(SRCS) \( -name "*.tab.c" -or -name "*.tab.h" -or -name "*.yy.c" \) -delete
 	@$(INFO) ok $@
 
+# @brief Compile la cible principale avec fonctionnalités de debuggage
+debug: CFLAGS += -g -DDEBUG
+debug: $(PROJECT)
+	@$(INFO) ok $@
+
 # @brief Installe le logiciel compilé sur le système.
 install: $(PROJECT)
 	@mkdir -p $(INSTALL)

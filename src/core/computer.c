@@ -85,6 +85,14 @@ static void lmc_ucode(LmcUcodes ucode);
 
 /**
  * @since 0.1.0
+ * @brief Affiche le contenu de la mémoire de l'ordinateur.
+ * @attention N'est fonctionnel que si la macro #DEBUG est définie à
+ * la compilation.
+ */
+static void lmc_dump(void);
+
+/**
+ * @since 0.1.0
  * @brief Effectue la phase I: "recherche de l'instruction".
  */
 static void lmc_phaseOne(void);
@@ -285,8 +293,21 @@ LmcRam lmc_shell(const char* restrict filepath)
 
     // On exécute le programme.
     lmc_hal.on = true; // Hello Dave. You are looking well today.
-    while (lmc_hal.on) lmc_phaseOne(), lmc_phaseTwo() ? lmc_phaseThree() : 0;
+    while (lmc_hal.on) lmc_dump(), lmc_phaseOne(), lmc_phaseTwo() ? lmc_phaseThree() : 0;
     return lmc_hal.mem.cache.wr; // code de status du programme
+}
+
+static void lmc_dump(void)
+{
+#ifdef DEBUG
+    usleep(0.1*1000*1000);
+    for (int i = 0; i < LMC_MAXRAM; ++i)
+    {
+        if (!(i & 0x0f)) fprintf(stderr, "\n%02x ", i);
+        fprintf(stderr, "%02x ", lmc_hal.mem.ram[i]);
+    }
+    fprintf(stderr, "\n");
+#endif // DEBUG
 }
 
 static bool lmc_setInput(const char* restrict filepath)
