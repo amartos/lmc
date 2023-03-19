@@ -47,5 +47,14 @@ int yyparse(LmcLexerCallback callback, const char* restrict desc);
  */
 LmcOpCodes lmc_opcode(char* keyword) __attribute__((nonnull));
 
+/**
+ * @since 0.1.0
+ * @brief Convertit un code d'opération en mot-clé.
+ * @param opcode Un code d'opération.
+ * @return Le mot-clé correspondant au code d'opération, ou une chaîne
+ * vide si le mot-clé ne correspond à aucun code.
+ */
+const char* lmc_keyword(LmcOpCodes opcode) __attribute__((returns_nonnull));
+
 #endif // LMC_LEXER_H_
 /** @} */

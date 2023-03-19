@@ -26,24 +26,6 @@
  ******************************************************************************/
 // clang-format on
 
-// Les mnémoniques à tester.
-static char* keywords[LMC_MAXRAM] = {
-    [VAR]   = "@",
-    [INDIR] = "*@",
-    [ADD]   = "add",
-    [SUB]   = "sub",
-    [NAND]  = "nand",
-    [LOAD]  = "load",
-    [STORE] = "store",
-    [IN]    = "in",
-    [OUT]   = "out",
-    [JUMP]  = "jump",
-    [BRN]   = "brn",
-    [BRZ]   = "brz",
-    [HLT]   = "stop",
-    [START] = "start",
-};
-
 // Variable contenant du code traduit pour comparaison.
 char* bytes = NULL;
 
@@ -85,9 +67,10 @@ SCCROLL_MOCK(ENTRY*, hsearch, ENTRY item, ACTION action)
 
 SCCROLL_TEST(translation)
 {
-    for (int i = 0; i < LMC_MAXRAM; ++i)
-        if (keywords[i])
-            assert(lmc_opcode(strdup(keywords[i])) == i);
+    int i;
+    const char* keyword;
+    for (i = 0, keyword = lmc_keyword(i); i < LMC_MAXRAM; ++i, keyword = lmc_keyword(i))
+        assert((!*keyword) || (lmc_opcode(strdup(keyword)) == (LmcOpCodes)i));
     assert(lmc_opcode(strdup("")) == 0);
 }
 
