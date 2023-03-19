@@ -17,14 +17,10 @@
 // clang-format off
 
 /******************************************************************************
- * Gestion des données analysées.
- ******************************************************************************/
-// clang-format on
-
-/**
  * @name Traduction des mnémoniques en codes d'opération.
  * @{
- */
+ ******************************************************************************/
+// clang-format on
 
 /**
  * @since 0.1.0
@@ -61,11 +57,10 @@ static const struct {
     {"start", START},
 };
 
-/** @} */
-
 // clang-format off
 
 /******************************************************************************
+ * @}
  * Implémentation
  ******************************************************************************/
 // clang-format on
@@ -109,5 +104,3 @@ LmcOpCodes lmc_stringToOpCode(char* string)
     free(string); // la chaîne a été strdup()
     return value;
 }
-
-/** @} */
