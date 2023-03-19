@@ -143,6 +143,13 @@ $(LOGS)/%.log: $(BIN)/%
 		&& $(INFO) pass $(notdir $*) \
 		|| ($(INFO) fail $(notdir $*); true)
 
+# Cette recette ne devrait pas être souvent utilisée. Elle existe pour
+# le cas où l'on est en train de construire un test unitaire, et que
+# le premier log est inexistant.
+$(TLOGS)/%.log:
+	@mkdir -p $(dir $@)
+	@touch $@
+
 $(LOGS)/%.difflog: $(TLOGS)/%.log $(LOGS)/%.log
 	@mkdir -p $(dir $@)
 	@git diff --no-index $^ > $@ \
@@ -156,7 +163,7 @@ $(LOGS)/%.difflog: $(TLOGS)/%.log $(LOGS)/%.log
 ###############################################################################
 
 .PHONY: all $(PROJECT) install tests docs init help
-.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LOGS)/%.difflog
+.PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LOGS)/%.difflog $(TLOGS)/%.log
 
 # @brief Compile la cible principale du project
 all: $(PROJECT)
