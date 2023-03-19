@@ -219,6 +219,7 @@ typedef enum __attribute__((__packed__)) LmcOpCodes {
     JUMP  = JMP,        /**< Saute vers une adresse (alias de #JMP).*/
     BRN   = JMP | INV,  /**< Saute si l'accumulateur est négatif. */
     BRZ   = JMP | NOT,  /**< Saute si l'accumulateur est nul.*/
+    START = PTR,        /**< Indique une adresse de démarrage. */
 } LmcOpCodes;
 
 /**

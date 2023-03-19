@@ -1,4 +1,4 @@
-startabs x30
+start @ x30
 
 // main
 in    @ x43 // 30 input du dividende

@@ -94,8 +94,6 @@ void lmc_compilerWrite(FILE* output, LmcRam code, LmcRam value);
 %token  <string>        POINTER
 %token  <value>         VALUE
 %type   <operation>     keyword
-%left   <string>        START    "start"
-%left   <string>        STARTABS "startabs"
 
 // Paramètres supplémentaires pour la fonction d'analyse yyparser; ils
 // permettent de stocker des informations à utiliser plus tard
@@ -121,14 +119,19 @@ line: | line expr;
 
 // Une ligne contenant une commande.
 expr:
-       START VALUE { *startpos = LMC_MAXROM + 1 + $2; } // +1 pour l'argument du jump du bootstrap
-|   STARTABS VALUE { *startpos = $2; }
-|    keyword VALUE {
-        // LmcOpCodes est cast en LmcRam. Cela ne devrait pas poser de
-        // problèmes puisque les valeurs des codes d'opérations sont
-        // compatibles.
-        lmc_compilerWrite(output, $1, $2);
-        *size += 2;
+     keyword VALUE {
+        switch($1)
+        {
+        case START:       *startpos += $2; break;
+        case START | VAR: *startpos  = $2; break;
+        default:
+            // LmcOpCodes est cast en LmcRam. Cela ne devrait pas poser de
+            // problèmes puisque les valeurs des codes d'opérations sont
+            // compatibles.
+            lmc_compilerWrite(output, $1, $2);
+            *size += 2;
+            break;
+        }
     }
 ;
 
@@ -190,6 +193,7 @@ static const struct {
     {  "brn",   BRN},
     {  "brz",   BRZ},
     { "stop",   HLT},
+    {"start", START},
 };
 
 /** @} */

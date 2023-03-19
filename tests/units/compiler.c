@@ -188,7 +188,7 @@ SCCROLL_TEST(
     hsearch_find_errors_handling,
     .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
     .std = {
-        [STDERR_FILENO] = { .content.blob = "compiler: unknown item 'in': Success", }
+        [STDERR_FILENO] = { .content.blob = "compiler: unknown item 'start': Success", }
     }
 )
 { trigger.errnum = ERRHSEARCHFIND, lmc_compile(PRODUCT LMC_EXT, NULL); }

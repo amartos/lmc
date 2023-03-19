@@ -64,8 +64,6 @@ EOF            { yylineno = 0; return EOF; }
 <BLOCK>\n      { ++yylineno; }      /**< les sauts de ligne ne sont pas ignorés par la règle suivante. */
 <BLOCK>.       {}                   /**< on ignore tout le reste */
 <BLOCK>"*/"    { BEGIN(INITIAL); }  /**< fin des blocks */
-"start"        { return START; }    /**< la commande donnant la position de départ relative du programme */
-"startabs"     { return STARTABS; } /**< la commande donnant la position de départ absolue du programme */
 x[[:xdigit:]]+ { yylval.value = (LmcRam)strtol(yytext+1, NULL, 16); return VALUE; } /**< code hexadécimal */
 [[:digit:]]+   { yylval.value = (LmcRam)strtol(yytext, NULL, 10); return VALUE; }   /**< nombre décimal */
 [[:alpha:]]+   { yylval.string = strdup(yytext); return KEYWORD; }                  /**< mot-clé */

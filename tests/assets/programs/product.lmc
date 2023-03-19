@@ -1,4 +1,4 @@
-startabs x30
+start @ x30
 
 // Les emplacements de stockages de nombres.
 x00     x00  // 30 les deux nombres donnés
