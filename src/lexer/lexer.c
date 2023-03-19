@@ -89,18 +89,18 @@ static void lmc_hcreate(void)
         }
 }
 
-LmcOpCodes lmc_stringToOpCode(char* string)
+LmcOpCodes lmc_opcode(char* keyword)
 {
     // on cherche le mot-clé donné dans la table de hachage. Cependant,
     // si le mot-clé n'y est pas, ou que la chaîne est vide, on
     // renvoie 0.
-    ENTRY entry = { .key = string, };
+    ENTRY entry = { .key = keyword, };
     ENTRY* retval = NULL;
     LmcOpCodes value = 0;
-    if (*string && !(retval = hsearch(entry, FIND)))
-        err(EXIT_FAILURE, "unknown item '%s'", string);
+    if (*keyword && !(retval = hsearch(entry, FIND)))
+        err(EXIT_FAILURE, "unknown item '%s'", keyword);
     else if (retval)
         value = *((LmcOpCodes*) (retval->data));
-    free(string); // la chaîne a été strdup()
+    free(keyword); // la chaîne a été strdup()
     return value;
 }

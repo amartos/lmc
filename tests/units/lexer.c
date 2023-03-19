@@ -87,8 +87,8 @@ SCCROLL_TEST(translation)
 {
     for (int i = 0; i < LMC_MAXRAM; ++i)
         if (keywords[i])
-            assert(lmc_stringToOpCode(strdup(keywords[i])) == i);
-    assert(lmc_stringToOpCode(strdup("")) == 0);
+            assert(lmc_opcode(strdup(keywords[i])) == i);
+    assert(lmc_opcode(strdup("")) == 0);
 }
 
 SCCROLL_TEST(
@@ -98,7 +98,7 @@ SCCROLL_TEST(
         [STDERR_FILENO] = { .content.blob = "lexer: unknown item 'foobar': Success", }
     }
 )
-{ trigger.errnum = ERRHSEARCH, lmc_stringToOpCode(strdup("foobar")); }
+{ trigger.errnum = ERRHSEARCH, lmc_opcode(strdup("foobar")); }
 
 SCCROLL_TEST(
     hsearch_find_errors_handling,
@@ -107,7 +107,7 @@ SCCROLL_TEST(
         [STDERR_FILENO] = { .content.blob = "lexer: unknown item 'in': Success", }
     }
 )
-{ trigger.errnum = ERRHSEARCH, lmc_stringToOpCode(strdup("in")); }
+{ trigger.errnum = ERRHSEARCH, lmc_opcode(strdup("in")); }
 
 SCCROLL_TEST(
     yyerror_output,

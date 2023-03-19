@@ -41,11 +41,11 @@ int yyparse(LmcLexerCallback callback, const char* restrict desc);
 /**
  * @since 0.1.0
  * @brief Traduit la chaîne donnée en un code d'opération.
- * @param word Une chaîne contenant un mot.
+ * @param keyword Un mot clé.
  * @return le code correspondant au mot, ou 0 si le mot n'a aucun code
  * correspondant.
  */
-LmcOpCodes lmc_stringToOpCode(char* word) __attribute__((nonnull));
+LmcOpCodes lmc_opcode(char* keyword) __attribute__((nonnull));
 
 #endif // LMC_LEXER_H_
 /** @} */
