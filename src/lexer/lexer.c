@@ -97,6 +97,5 @@ LmcOpCodes lmc_opcode(char* keyword)
     else if (retval)
         // size_t pour la taille du type, compatible avec void*
         value = (size_t)(retval->data);
-    free(keyword); // la chaîne a été strdup()
     return value;
 }

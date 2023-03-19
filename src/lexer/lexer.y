@@ -94,8 +94,11 @@ expr:
 // possibilité de l'adressage, qui doit être combiné à la valeur du
 // code d'opération.
 keyword:
-            KEYWORD { $$ = lmc_opcode($1); }
-|   KEYWORD POINTER { $$ = lmc_opcode($1) | lmc_opcode($2); }
+            KEYWORD { $$ = lmc_opcode($1), free($1); }
+|   KEYWORD POINTER {
+                $$ = lmc_opcode($1) | lmc_opcode($2);
+                free($1), free($2);
+    }
 |             VALUE { $$ = $1; }
 ;
 
