@@ -105,8 +105,7 @@ typedef enum LmcMocks {
     ERRFREAD,        /**< fread */
     ERRFWRITE,       /**< fwrite */
     ERRHCREATE,      /**< hcreate */
-    ERRHSEARCHENTER, /**< hsearch (action ENTER) */
-    ERRHSEARCHFIND,  /**< hsearch (action FIND) */
+    ERRHSEARCH,      /**< hsearch */
 } LmcMocks;
 
 /**

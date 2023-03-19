@@ -1,29 +1,30 @@
 /**
- * @file        compiler.l
+ * @file        lexer.l
  * @version     0.1.0
- * @brief       Module flex du compilateur de l'ordinateur en papier.
+ * @brief       Module flex du traducteur de l'ordinateur en papier.
  * @year        2023
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
  * @copyright   GNU General Public License v3
  * @compilation
  * @code{.sh}
- * flex -o compiler.yy.c src/compiler/compiler.l
+ * flex -o lexer.yy.c src/lexer/lexer.l
  * @endcode
  *
- * @addtogroup CompilerInternals
+ * @addtogroup LexerInternals
  * @{
  */
 
 %{
 
 #include "lmc/computer.h"
+#include "lmc/lexer.h"
 
 /**
  * Le header du fichier généré par bison. Il n'existe pas en dehors de
  * la compilation.
  */
-#include "compiler.tab.h"
+#include "lexer.tab.h"
 
 %}
 

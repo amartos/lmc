@@ -15,6 +15,14 @@
 #ifndef LMC_COMPILER_H_
 #define LMC_COMPILER_H_
 
+#include "lmc/computer.h"
+#include "lmc/lexer.h"
+
+#include <err.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 /**
  * @def LMC_EXT
  * @since 0.1.0
@@ -40,6 +48,14 @@
  * réussite.
  */
 int lmc_compile(const char* source, const char* dest) __attribute__((nonnull (1)));
+
+/**
+ * @since 0.1.0
+ * @brief Gère un couple code d'opération/valeur argument.
+ * @param code Le code d'opération.
+ * @param value La valeur d'argument.
+ */
+void lmc_compilerCallback(LmcRam code, LmcRam value);
 
 #endif // LMC_COMPILER_H_
 /** @} */

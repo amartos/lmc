@@ -109,18 +109,6 @@ static LmcMockTrigger trigger = {0};
 
 void sccroll_before(void) { trigger.errnum = 0, trigger.delay = 0; }
 
-SCCROLL_MOCK(int, hcreate, size_t nel)
-{ return lmc_mockErr(hcreate, ERRHCREATE, (errno = ENOMEM, 0), nel); }
-
-SCCROLL_MOCK(ENTRY*, hsearch, ENTRY item, ACTION action)
-{
-    return
-        (trigger.errnum == ERRHSEARCHENTER && action == ENTER)
-        || (trigger.errnum == ERRHSEARCHFIND && action == FIND)
-        ? NULL
-        : __real_hsearch(item, action);
-}
-
 SCCROLL_MOCK(FILE*, fopen, const char* restrict pathname, const char* restrict mode)
 { return lmc_mockErr(fopen, ERRFOPEN, NULL, pathname, mode); }
 
@@ -167,33 +155,6 @@ SCCROLL_TEST(
 { assert(lmc_compile(MALFORMED LMC_EXT, NULL)); }
 
 SCCROLL_TEST(
-    hcreate_errors_handling,
-    .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
-    .std = {
-        [STDERR_FILENO] = { .content.blob = "compiler: could not create hash table: Cannot allocate memory", }
-    }
-)
-{ trigger.errnum = ERRHCREATE, lmc_compile(MALFORMED LMC_EXT, NULL); }
-
-SCCROLL_TEST(
-    hsearch_enter_errors_handling,
-    .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
-    .std = {
-        [STDERR_FILENO] = { .content.blob = "compiler: could not add '@' item in hash table: Success", }
-    }
-)
-{ trigger.errnum = ERRHSEARCHENTER, lmc_compile(PRODUCT LMC_EXT, NULL); }
-
-SCCROLL_TEST(
-    hsearch_find_errors_handling,
-    .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
-    .std = {
-        [STDERR_FILENO] = { .content.blob = "compiler: unknown item 'start': Success", }
-    }
-)
-{ trigger.errnum = ERRHSEARCHFIND, lmc_compile(PRODUCT LMC_EXT, NULL); }
-
-SCCROLL_TEST(
     fopen_errors_handling_nodelay,
     .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
     .std = {
@@ -219,7 +180,7 @@ SCCROLL_TEST(
     .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
     .std = {
         [STDERR_FILENO] = { .content.blob =
-            "compiler: could not write codes (21,00) in " LMC_BIN ": Success",
+            "compiler: could not write codes (00,00) in " LMC_BIN ": Success",
         }
     }
 )
