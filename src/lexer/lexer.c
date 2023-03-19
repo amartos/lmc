@@ -28,16 +28,13 @@
 
 /**
  * @since 0.1.0
- * @brief Génère une table de hachage des mots-clés des codes
- * d'opération.
+ * @brief Génère la table de hachage des mots clés.
  */
-static void lmc_makeOpCodesHashTable(void) __attribute__((constructor));
+static void lmc_hcreate(void) __attribute__((constructor));
 
-/**
- * @since 0.1.0
- * @brief Effectue le nettoyage du module.
- */
-static void lmc_lexerCleanup(void) __attribute__((destructor));
+// on ajoute l'attribut destructor à une fonction de la librairie
+// standard, pour l'inscrire automatiquement à l'exit.
+void hdestroy(void) __attribute__((destructor));
 
 /**
  * @var lmc_compiler_mnemonics
@@ -73,7 +70,7 @@ static const struct {
  ******************************************************************************/
 // clang-format on
 
-static void lmc_makeOpCodesHashTable(void)
+static void lmc_hcreate(void)
 {
     int status;
     ENTRY entries[LMC_MAXRAM];
@@ -96,8 +93,6 @@ static void lmc_makeOpCodesHashTable(void)
                 err(EXIT_FAILURE, "could not add '%s' item in hash table", lmc_compiler_mnemonics[i].key);
         }
 }
-
-static void lmc_lexerCleanup(void) { hdestroy(); }
 
 LmcOpCodes lmc_stringToOpCode(char* string)
 {
