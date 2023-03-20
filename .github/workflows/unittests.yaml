@@ -1,0 +1,27 @@
+name: Build tests
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Installing dependencies packages
+        run: apt update && apt install -y sudo rsync
+      - name: Pulling Sccroll dependency
+        uses: actions/checkout@v3
+        with:
+          repository: amartos/Sccroll
+          ref: "master"
+          path: "sccroll"
+      - name: Installing Sccroll
+        run: make -C sccroll install
+      - name: Pulling repo
+        uses: actions/checkout@v3
+        with:
+          ref: "master"
+          path: "repo"
+      - name: Unit testing and coverage calculation
+        run: make -C repo tests
