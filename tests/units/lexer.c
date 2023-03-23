@@ -111,7 +111,9 @@ SCCROLL_TEST(analysis)
 {
     // on utilise une autre variable car bytes va changer (et on ne
     // pourra plus le libérer).
-    char* code = strdup(DUMMYCODE);
+    char* code = calloc(DUMMYCODELEN+1, sizeof(char));
+    if (!code) err(EXIT_FAILURE, "could not allocate for dummy code dup");
+    memcpy(code, DUMMYCODE, sizeof(char)*DUMMYCODELEN);
     bytes = code;
     // DUMMYCODE contient l'en-tête, mais ce ne sont pas les deux
     // premiers octets rencontrés.

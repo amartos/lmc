@@ -91,7 +91,7 @@ void test_prep(void)
     }
 
     program_files[dummycode].content = DUMMYCODE;
-    program_files[dummycode].size = sizeof(char)*strlen(DUMMYCODE);
+    program_files[dummycode].size = sizeof(char)*DUMMYCODELEN;
 }
 
 // Nettoyage du module.

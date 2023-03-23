@@ -58,7 +58,7 @@
   */
 
 EOF            { yylineno = 0; return EOF; }
-\n             { ++yylineno; }
+\n             { ++yylineno; return EOL; }
 [ \t]*         {} /**< on ignore les espaces */
 ("#"|";"|"//")[^\n]*? {} /** on ignore les sauts de lignes et commentaires (mais on compte les lignes). */
 "/*"           { BEGIN(BLOCK); }    /**< blocks de commentaires style c */

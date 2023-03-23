@@ -79,7 +79,14 @@
  * @since 0.1.0
  * @brief Code compilé attendu pour le programme #DUMMY.
  */
-#define DUMMYCODE "\xab\x0c\x20\x23\x40\x53\xd0\xaf\x09\x02\x41\xff\x12\x56"
+#define DUMMYCODE "\xab\x0e\x20\x23\x40\x53\xd0\xaf\x09\x02\x41\xff\x40\x00\x12\x56"
+
+/**
+ * @def DUMMYCODELEN
+ * @since 0.1.0
+ * @brief Nombre de codes contenus par la chaîne DUMMYCODE.
+ */
+#define DUMMYCODELEN (strlen(DUMMYCODE)+3)
 /** @} */
 
 /**

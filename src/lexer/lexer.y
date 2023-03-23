@@ -61,7 +61,9 @@
 %left   <string>        KEYWORD
 %token  <string>        POINTER
 %token  <value>         VALUE
+%token                  EOL
 %type   <operation>     keyword
+%type   <value>         arg
 
 // Paramètres supplémentaires pour la fonction d'analyse yyparser; ils
 // permettent de stocker des informations à utiliser plus tard
@@ -87,7 +89,8 @@ line: | line expr;
 
 // Une ligne contenant une commande.
 expr:
-      keyword VALUE { callback($1, $2); }
+        keyword arg { callback($1, $2); }
+|               EOL {}
 ;
 
 // conversion des mots-clés; elle est traitée à part du fait de la
@@ -100,6 +103,11 @@ keyword:
                 free($1), free($2);
     }
 |             VALUE { $$ = $1; }
+;
+
+arg:
+              VALUE { $$ = $1; }
+|               EOL { $$ = 0; }
 ;
 
 %%

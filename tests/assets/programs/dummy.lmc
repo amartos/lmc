@@ -16,4 +16,5 @@ out @ xff
 foo
 
           */
+load @
 brz x56
