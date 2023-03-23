@@ -115,6 +115,6 @@ keyword:
 // l'utilisateur.
 int yyerror(LmcLexerCallback callback, const char* restrict desc, const char* restrict msg) {
     (void) callback;
-    fprintf(stderr, "%s: %s at line %i: '%s'", desc, msg, yylineno, yytext);
+    fprintf(stderr, "%s: %s at line %i: '%s'\n", desc, msg, yylineno, yytext);
     return EXIT_FAILURE;
 }
