@@ -26,7 +26,7 @@
  * @typedef LmcLexerCallback
  * @brief Type de fonction de rappel à utiliser lors de la traduction.
  */
-typedef void (LmcLexerCallback)(LmcRam code, LmcRam arg);
+typedef void (LmcLexerCallback)(LmcRam* header, LmcRam code, LmcRam arg);
 
 // Variables et fonctions du module flex nécessaires au bon
 // fonctionnement lors de l'analyse de texte.
@@ -34,9 +34,9 @@ extern FILE* yyin;
 extern char* yytext;
 extern int yylineno;
 int yylex(void);
-int yyerror(LmcLexerCallback callback, const char* restrict desc, const char* restrict msg)
+int yyerror(LmcLexerCallback callback, LmcRam* header, const char* restrict desc, const char* restrict msg)
     __attribute__((nonnull));
-int yyparse(LmcLexerCallback callback, const char* restrict desc);
+int yyparse(LmcLexerCallback callback, LmcRam* header, const char* restrict desc);
 
 /**
  * @since 0.1.0

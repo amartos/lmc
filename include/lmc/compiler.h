@@ -24,6 +24,17 @@
 #include <stdlib.h>
 
 /**
+ * @enum LmcCompileHeader
+ * @since 0.1.0
+ * @brief Index des éléments d'en-tête d'un fichier compilé.
+ */
+typedef enum LmcCompileHeader {
+    LMC_STARTPOS = 0, /**< Adresse de départ du programme. */
+    LMC_SIZE,         /**< Taille du programme. */
+    LMC_MAXHEADER,    /**< Taille de l'en-tête. */
+} LmcCompileHeader;
+
+/**
  * @def LMC_EXT
  * @since 0.1.0
  * @brief Extension pour les fichiers compilés.
@@ -52,10 +63,12 @@ int lmc_compile(const char* source, const char* dest) __attribute__((nonnull (1)
 /**
  * @since 0.1.0
  * @brief Gère un couple code d'opération/valeur argument.
+ * @param header La table de l'en-tête du fichier compilé, de
+ * taille #LMC_MAXHEADER.
  * @param code Le code d'opération.
  * @param value La valeur d'argument.
  */
-void lmc_compilerCallback(LmcRam code, LmcRam value);
+void lmc_compilerCallback(LmcRam* header, LmcRam code, LmcRam value);
 
 #endif // LMC_COMPILER_H_
 /** @} */

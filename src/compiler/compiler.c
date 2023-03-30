@@ -34,6 +34,12 @@ static FILE* lmc_compilerOpenFiles(const char* restrict source, const char* dest
 
 /**
  * @since 0.1.0
+ * @brief Écrit l'en-tête dans le fichier de destination.
+ */
+static void lmc_compilerWriteHeader(void);
+
+/**
+ * @since 0.1.0
  * @brief Écrit un couple code d'opération/valeur argument dans le
  * fichier de destination.
  * @param code Le code d'opération.
@@ -63,9 +69,12 @@ static const char* realdest = NULL;
  */
 static FILE* output = NULL;
 
-static LmcRam startpos = 0;
-
-static LmcRam size = 0;
+/**
+ * @var header
+ * @since 0.1.0
+ * @brief Valeurs pour l'en-tête du fichier.
+ */
+static LmcRam header[LMC_MAXHEADER] = { 0 };
 /** @} */
 
 // clang-format off
@@ -86,19 +95,19 @@ int lmc_compile(const char* source, const char* dest)
     // pas de directive "start", on met le départ à la valeur par
     // défaut.
     output = lmc_compilerOpenFiles(source, dest);
-    lmc_compilerWrite(0, 0);
+    lmc_compilerWriteHeader();
     // On initialise startpos à LMC_MAXROM+1 car elle équivaut à la
     // position 0 du programme dans la mémoire (juste après
     // l'argument de l'instruction JUMP du bootstrap). Si aucune
     // position de départ n'est donnée, ce sera celle par défaut.
-    startpos = LMC_MAXROM + 1;
+    header[LMC_STARTPOS] = LMC_MAXROM + 1;
     // compilerWrite incrémente la taille, or on la veut à 0.
-    size = 0;
+    header[LMC_SIZE] = 0;
 
     // On analyse le fichier source, et on inscrit les données
     // compilées dans le fichier de destination. On ferme ensuite la
     // source une fois l'analyse terminée.
-    status = yyparse(lmc_compilerCallback, source);
+    status = yyparse(lmc_compilerCallback, header, source);
     fclose(yyin);
 
     // On modifie les espaces réservés pour les informations sur le
@@ -107,7 +116,7 @@ int lmc_compile(const char* source, const char* dest)
     // aussi le chemin du fichier de destination s'il est différent de
     // celui précisé (ou que dest est NULL, en cas).
     rewind(output);
-    lmc_compilerWrite(startpos, size);
+    lmc_compilerWriteHeader();
     fclose(output);
     if (!status && realdest != dest) printf("LMC: compiled to '%s'\n", realdest);
 
@@ -129,13 +138,21 @@ static FILE* lmc_compilerOpenFiles(const char* restrict source, const char* dest
     return output;
 }
 
-void lmc_compilerCallback(LmcRam code, LmcRam value)
+static void lmc_compilerWriteHeader(void)
+{
+    lmc_compilerWrite(header[LMC_STARTPOS], header[LMC_SIZE]);
+}
+
+void lmc_compilerCallback(LmcRam* header, LmcRam code, LmcRam value)
 {
     switch(code)
     {
-    case START:       startpos += value; break;
-    case START | VAR: startpos  = value; break;
-    default: lmc_compilerWrite(code, value); break;
+    case START:       header[LMC_STARTPOS] += value; break;
+    case START | VAR: header[LMC_STARTPOS]  = value; break;
+    default:
+        lmc_compilerWrite(code, value);
+        header[LMC_SIZE] += 2;
+        break;
     }
 }
 
@@ -148,5 +165,4 @@ static void lmc_compilerWrite(LmcRam code, LmcRam value)
             LMC_MAXDIGITS, value,
             realdest
         );
-    size += 2;
 }
