@@ -180,7 +180,7 @@ SCCROLL_TEST(
     .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
     .std = {
         [STDERR_FILENO] = { .content.blob =
-            "compiler: could not write codes (00,00) in " LMC_BIN ": Success",
+            "compiler: " LMC_BIN ": Success",
         }
     }
 )

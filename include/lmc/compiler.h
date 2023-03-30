@@ -60,15 +60,5 @@ typedef enum LmcCompileHeader {
  */
 int lmc_compile(const char* source, const char* dest) __attribute__((nonnull (1)));
 
-/**
- * @since 0.1.0
- * @brief Gère un couple code d'opération/valeur argument.
- * @param header La table de l'en-tête du fichier compilé, de
- * taille #LMC_MAXHEADER.
- * @param code Le code d'opération.
- * @param value La valeur d'argument.
- */
-void lmc_compilerCallback(LmcRam* header, LmcRam code, LmcRam value);
-
 #endif // LMC_COMPILER_H_
 /** @} */

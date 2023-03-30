@@ -24,9 +24,31 @@
 
 /**
  * @typedef LmcLexerCallback
+ * @since 0.1.0
  * @brief Type de fonction de rappel à utiliser lors de la traduction.
+ *
+ * Ces fonctions sont utilisées pour gérer l'ajout du couple (@p code,
+ * @p value) dans la table @p array).
+ *
+ * @note La fonction lmc_append() correspond à ce type.
+ *
+ * @param array La table de traduction.
+ * @param code Le premier élément ajouté.
+ * @param value Le second élément ajouté.
  */
-typedef void (*LmcLexerCallback)(LmcRam* header, LmcRam code, LmcRam arg);
+typedef void (*LmcLexerCallback)(LmcMemoryArray* array, LmcRam code, LmcRam arg);
+
+/**
+ * @struct LmcLexer
+ * @since 0.1.0
+ * @brief Structure contenant les informations nécessaires à la
+ * traduction.
+ */
+typedef struct LmcLexer {
+    const char* desc;          /**< Descriptif de la traduction. */
+    LmcLexerCallback callback; /**< Fonction gérant la table de traduction. */
+    LmcMemoryArray values;     /**< Table de traduction. */
+} LmcLexer;
 
 // Variables et fonctions du module flex nécessaires au bon
 // fonctionnement lors de l'analyse de texte.
@@ -34,9 +56,8 @@ extern FILE* yyin;
 extern char* yytext;
 extern int yylineno;
 int yylex(void);
-int yyerror(LmcLexerCallback callback, LmcRam* header, const char* restrict desc, const char* restrict msg)
-    __attribute__((nonnull));
-int yyparse(LmcLexerCallback callback, LmcRam* header, const char* restrict desc);
+int yyerror(LmcLexer* lexer, const char* restrict msg) __attribute__((nonnull));
+int yyparse(LmcLexer* lexer);
 
 /**
  * @since 0.1.0
@@ -55,6 +76,17 @@ LmcOpCodes lmc_opcode(char* keyword) __attribute__((nonnull));
  * vide si le mot-clé ne correspond à aucun code.
  */
 const char* lmc_keyword(LmcOpCodes opcode) __attribute__((returns_nonnull));
+
+/**
+ * @since 0.1.0
+ * @brief Ajoute le couple (@p code, @p value) à la table de
+ * traduction et incrémente l'index LmcMemoryArray::current.
+ * @param array La table de traduction.
+ * @param code Le premier élément ajouté.
+ * @param value Le second élément ajouté.
+ */
+void lmc_append(LmcMemoryArray* array, LmcRam code, LmcRam value)
+    __attribute__((nonnull (1)));
 
 #endif // LMC_LEXER_H_
 /** @} */

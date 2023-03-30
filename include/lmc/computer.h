@@ -62,6 +62,17 @@ typedef enum LmcMemoryCaracs {
 #define LMC_HEXFMT "%0*x"
 
 /**
+ * @struct LmcMemoryArray
+ * @since 0.1.0
+ * @brief Table de valeurs LmcRam.
+ */
+typedef struct LmcMemoryArray {
+    LmcRam* values; /**< Table des valeurs. */
+    size_t max;     /**< Taille maximale de LmcMemoryArray::values. */
+    size_t current; /**< Premier index libre de LmcMemoryArray::values. */
+} LmcMemoryArray;
+
+/**
  * @struct LmcMemory
  * @since 0.1.0
  * @brief Structure de la mémoire de la machine.

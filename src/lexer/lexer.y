@@ -69,7 +69,7 @@
 // permettent de stocker des informations à utiliser plus tard
 // (startpos, size), ou de passer des paramètres aux fonctions
 // internes.
-%parse-param { LmcLexerCallback callback } { LmcRam* header } { const char* restrict desc }
+%parse-param { LmcLexer* lexer }
 
 // Le point de départ de l'analyse.
 %start line
@@ -89,7 +89,7 @@ line: | line expr;
 
 // Une ligne contenant une commande.
 expr:
-        keyword arg { callback(header, $1, $2); }
+        keyword arg { lexer->callback(&lexer->values, $1, $2); }
 |               EOL {}
 ;
 
@@ -121,9 +121,8 @@ arg:
 
 // cette fonction du module flex doit être implémentée par
 // l'utilisateur.
-int yyerror(LmcLexerCallback callback, LmcRam* header, const char* restrict desc, const char* restrict msg) {
-    (void) callback;
-    (void) header;
-    fprintf(stderr, "%s: %s at line %i: '%s'\n", desc, msg, yylineno, yytext);
+int yyerror(LmcLexer* lexer, const char* restrict msg)
+{
+    fprintf(stderr, "%s: %s at line %i: '%s'\n", lexer->desc, msg, yylineno, yytext);
     return EXIT_FAILURE;
 }

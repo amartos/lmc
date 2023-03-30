@@ -99,3 +99,16 @@ LmcOpCodes lmc_opcode(char* keyword)
         value = (size_t)(retval->data);
     return value;
 }
+
+void lmc_append(LmcMemoryArray* array, LmcRam code, LmcRam value)
+{
+    if (array->current >= array->max-1) {
+        errno = ENOMEM;
+        err(EXIT_FAILURE,
+            "memory array size insufficient at (" LMC_HEXFMT "," LMC_HEXFMT ")",
+            LMC_MAXDIGITS, code,
+            LMC_MAXDIGITS, value);
+    }
+    array->values[array->current++] = code;
+    array->values[array->current++] = value;
+}

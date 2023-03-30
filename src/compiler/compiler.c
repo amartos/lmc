@@ -21,6 +21,15 @@
 
 /**
  * @since 0.1.0
+ * @brief Ajoute un couple code d'opération/valeur argument à la table
+ * de traduction.
+ * @param lexer Les informations de traduction.
+ * @param array La table de traduction.
+ */
+static void lmc_compilerCallback(LmcMemoryArray* array, LmcRam code, LmcRam value);
+
+/**
+ * @since 0.1.0
  * @brief Ouvre les fichiers sources et destination.
  * @param source Le chemin du fichier source.
  * @param dest Le chemin du fichier de destination; s'il est identique
@@ -34,18 +43,12 @@ static FILE* lmc_compilerOpenFiles(const char* restrict source, const char* dest
 
 /**
  * @since 0.1.0
- * @brief Écrit l'en-tête dans le fichier de destination.
+ * @brief Écrit les codes de la table de traduction dans le fichier de
+ * destination.
+ * @param lexer Les informations de traduction.
  */
-static void lmc_compilerWriteHeader(void);
-
-/**
- * @since 0.1.0
- * @brief Écrit un couple code d'opération/valeur argument dans le
- * fichier de destination.
- * @param code Le code d'opération.
- * @param value La valeur d'argument.
- */
-static void lmc_compilerWrite(LmcRam code, LmcRam value);
+static void lmc_compilerWrite(LmcLexer* lexer)
+    __attribute__((nonnull));
 
 /**
  * @var src
@@ -69,12 +72,6 @@ static const char* realdest = NULL;
  */
 static FILE* output = NULL;
 
-/**
- * @var header
- * @since 0.1.0
- * @brief Valeurs pour l'en-tête du fichier.
- */
-static LmcRam header[LMC_MAXHEADER] = { 0 };
 /** @} */
 
 // clang-format off
@@ -89,34 +86,31 @@ int lmc_compile(const char* source, const char* dest)
     int status = 0;
 
     // On prépare les descripteur de fichiers des sources et
-    // destination et on réserve l'espace pour les codes de départ et
-    // taille du programme dans le fichier de destination. Cela évite
-    // à l'utilisateur d'avoir à calculer la taille, et s'il ne donne
-    // pas de directive "start", on met le départ à la valeur par
-    // défaut.
+    // destination.
     output = lmc_compilerOpenFiles(source, dest);
-    lmc_compilerWriteHeader();
     // On initialise startpos à LMC_MAXROM+1 car elle équivaut à la
     // position 0 du programme dans la mémoire (juste après
     // l'argument de l'instruction JUMP du bootstrap). Si aucune
     // position de départ n'est donnée, ce sera celle par défaut.
-    header[LMC_STARTPOS] = LMC_MAXROM + 1;
-    // compilerWrite incrémente la taille, or on la veut à 0.
-    header[LMC_SIZE] = 0;
+    LmcRam array[LMC_MAXRAM] = { [LMC_STARTPOS] = LMC_MAXROM + 1 };
 
+    // L'index courant est situé juste après l'en-tête du fichier car
+    // on réserve ces emplacements.
+    LmcLexer lexer = {
+        .values   = { .values = array, .max = LMC_MAXRAM, .current = LMC_MAXHEADER, },
+        .callback = lmc_compilerCallback,
+        .desc     = source,
+    };
     // On analyse le fichier source, et on inscrit les données
     // compilées dans le fichier de destination. On ferme ensuite la
     // source une fois l'analyse terminée.
-    status = yyparse(lmc_compilerCallback, header, source);
+    status = yyparse(&lexer);
     fclose(yyin);
 
-    // On modifie les espaces réservés pour les informations sur le
-    // programme avec les-dites informations. On ferme ensuite la
-    // destination, puisqu'il n'y a plus rien à y écrire. On indique
-    // aussi le chemin du fichier de destination s'il est différent de
-    // celui précisé (ou que dest est NULL, en cas).
-    rewind(output);
-    lmc_compilerWriteHeader();
+    // On écrit dans le fichier de destination qu'on ferme ensuite. On
+    // indique aussi le chemin du fichier de destination s'il est
+    // différent de celui précisé (ou que dest est NULL, en cas).
+    lmc_compilerWrite(&lexer);
     fclose(output);
     if (!status && realdest != dest) printf("LMC: compiled to '%s'\n", realdest);
 
@@ -138,31 +132,22 @@ static FILE* lmc_compilerOpenFiles(const char* restrict source, const char* dest
     return output;
 }
 
-static void lmc_compilerWriteHeader(void)
-{
-    lmc_compilerWrite(header[LMC_STARTPOS], header[LMC_SIZE]);
-}
-
-void lmc_compilerCallback(LmcRam* header, LmcRam code, LmcRam value)
+static void lmc_compilerCallback(LmcMemoryArray* array, LmcRam code, LmcRam value)
 {
     switch(code)
     {
-    case START:       header[LMC_STARTPOS] += value; break;
-    case START | VAR: header[LMC_STARTPOS]  = value; break;
+    case START:       array->values[LMC_STARTPOS] += value; break;
+    case START | VAR: array->values[LMC_STARTPOS]  = value; break;
     default:
-        lmc_compilerWrite(code, value);
-        header[LMC_SIZE] += 2;
+        lmc_append(array, code, value);
+        array->values[LMC_SIZE] = array->current - LMC_MAXHEADER;
         break;
     }
 }
 
-static void lmc_compilerWrite(LmcRam code, LmcRam value)
+static void lmc_compilerWrite(LmcLexer* lexer)
 {
-    LmcRam hexcodes[2] = { code, value };
-    if (fwrite(&hexcodes, sizeof(LmcRam), 2, output) != 2)
-        err(EXIT_FAILURE, "could not write codes (" LMC_HEXFMT "," LMC_HEXFMT ") in %s",
-            LMC_MAXDIGITS, code,
-            LMC_MAXDIGITS, value,
-            realdest
-        );
+    size_t towrite = lexer->values.current;
+    if (fwrite(lexer->values.values, sizeof(LmcRam), towrite, output) != towrite)
+        err(EXIT_FAILURE, "%s", lexer->desc);
 }

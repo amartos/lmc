@@ -27,20 +27,22 @@
 // clang-format on
 
 // Variable contenant du code traduit pour comparaison.
-char* bytes = NULL;
+LmcMemoryArray bytes = {0};
 
 // Callback vérifiant la traduction de code.
-void lmc_lexerCheckerCallback(LmcRam code, LmcRam value)
+__attribute__((nonnull (1)))
+void lmc_lexerCheckerCallback(LmcMemoryArray* array, LmcRam code, LmcRam value)
 {
-    char hex[3] = { code, value };
-    assert(!memcmp(hex, bytes, sizeof(char)*2));
-    bytes += 2;
+    LmcRam hex[2] = { code, value };
+    assert(!memcmp(hex, &array->values[array->current], sizeof(LmcRam)*2));
+    array->current += 2;
 }
 
 // Callback qui interromp le programme s'il est appelé.
 __attribute__((noreturn))
-void lmc_lexerFatalCallback(LmcRam a, LmcRam b)
+void lmc_lexerFatalCallback(LmcMemoryArray* array, LmcRam a, LmcRam b)
 {
+    (void) array;
     (void) a;
     (void) b;
     errno = EINTR;
@@ -50,7 +52,14 @@ void lmc_lexerFatalCallback(LmcRam a, LmcRam b)
 // Simulacres et leur gestion pour les tests d'erreurs.
 static LmcMockTrigger trigger = { 0 };
 
-void sccroll_before(void) { trigger.errnum = 0, trigger.delay = 0; }
+void sccroll_before(void) {
+    trigger.errnum = 0, trigger.delay = 0;
+    if (bytes.values) {
+        free(bytes.values);
+        bytes.max     = 0;
+        bytes.current = 0;
+    }
+}
 
 // On ne créé pas de simulacre de hcreate, ni de hsearch qui teste
 // lors de l'entrée d'un item, car ces actions sont faites avant
@@ -103,24 +112,54 @@ SCCROLL_TEST(
 {
     yylineno = 42;
     yytext = "foobarbiz";
+    LmcLexer lexer = { .callback = lmc_lexerFatalCallback, .desc = "description", };
     // Si le callback est utilisé, une erreur différente est levée.
-    assert(yyerror(lmc_lexerFatalCallback, "description", "message") == EXIT_FAILURE);
+    assert(yyerror(&lexer, "message") == EXIT_FAILURE);
 }
 
 SCCROLL_TEST(analysis)
 {
-    // on utilise une autre variable car bytes va changer (et on ne
-    // pourra plus le libérer).
-    char* code = calloc(DUMMYCODELEN+1, sizeof(char));
-    if (!code) err(EXIT_FAILURE, "could not allocate for dummy code dup");
-    memcpy(code, DUMMYCODE, sizeof(char)*DUMMYCODELEN);
-    bytes = code;
+    bytes.values = calloc(DUMMYCODELEN, sizeof(LmcRam));
+    if (!bytes.values) err(EXIT_FAILURE, "could not allocate for dummy code dup");
+    memcpy(bytes.values, DUMMYCODE, sizeof(LmcRam)*DUMMYCODELEN);
+    bytes.max = DUMMYCODELEN;
+
     // DUMMYCODE contient l'en-tête, mais ce ne sont pas les deux
     // premiers octets rencontrés.
-    bytes[0] = (char)START;
-    bytes[1] = 0x8a;
+    bytes.values[0] = (char)START;
+    bytes.values[1] = 0x8a;
+    LmcLexer lexer = {
+        .callback = lmc_lexerCheckerCallback,
+        .values = bytes,
+        .desc = "checker",
+    };
     if (!(yyin = fopen(DUMMY LMC_EXT, "r")))
         err(EXIT_FAILURE, DUMMY LMC_EXT);
-    assert(!yyparse(lmc_lexerCheckerCallback, "checker"));
-    free(code);
+    assert(!yyparse(&lexer));
+}
+
+SCCROLL_TEST(append)
+{
+    LmcRam values[10] = { 0 };
+    LmcMemoryArray array = { .values = values, .max = 10, };
+    lmc_append(&array, 42, 23);
+    assert(array.values[0] == 42);
+    assert(array.values[1] == 23);
+    assert(array.max == 10);
+    assert(array.current == 2);
+}
+
+SCCROLL_TEST(
+    append_error,
+    .std = {
+        [STDERR_FILENO] = { .content.blob =
+            "lexer: memory array size insufficient at (2a,17): Cannot allocate memory",
+        }
+    }
+)
+{
+    LmcRam values[10] = { 0 };
+    LmcMemoryArray array = { .values = values, .max = 10, .current = 9, };
+    lmc_append(&array, 42, 23);
+    assertMsg(false, "Forbidden point reached");
 }
