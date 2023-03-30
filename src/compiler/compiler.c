@@ -15,11 +15,6 @@
 #include "lmc/compiler.h"
 
 /**
- * @name Gestion du fichier compilé.
- * @{
- */
-
-/**
  * @since 0.1.0
  * @brief Ajoute un couple code d'opération/valeur argument à la table
  * de traduction.
@@ -38,11 +33,11 @@ static void lmc_compilerCallback(LmcMemoryArray* array, LmcRam code, LmcRam valu
 static void lmc_compilerWrite(LmcLexer* lexer, const char* restrict path)
     __attribute__((nonnull));
 
-/** @} */
 
 // clang-format off
 
 /******************************************************************************
+ * @}
  * Implémentation
  ******************************************************************************/
 // clang-format on
