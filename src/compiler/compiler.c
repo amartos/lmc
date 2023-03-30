@@ -30,47 +30,13 @@ static void lmc_compilerCallback(LmcMemoryArray* array, LmcRam code, LmcRam valu
 
 /**
  * @since 0.1.0
- * @brief Ouvre les fichiers sources et destination.
- * @param source Le chemin du fichier source.
- * @param dest Le chemin du fichier de destination; s'il est identique
- * à @p source ou qu'il est @c NULL, le chemin du fichier source sera
- * utilisé, et une extension ".lmc" sera ajoutée.
- * @return Le descripteur du fichier de destination (celui du fichier
- * source est stocké dans yyin).
- */
-static FILE* lmc_compilerOpenFiles(const char* restrict source, const char* dest)
-    __attribute__((nonnull (1)));
-
-/**
- * @since 0.1.0
  * @brief Écrit les codes de la table de traduction dans le fichier de
  * destination.
  * @param lexer Les informations de traduction.
+ * @param path Le chemin du fichier de destination.
  */
-static void lmc_compilerWrite(LmcLexer* lexer)
+static void lmc_compilerWrite(LmcLexer* lexer, const char* restrict path)
     __attribute__((nonnull));
-
-/**
- * @var src
- * @since 0.1.0
- * @brief Chemin du fichier source.
- */
-static const char* src = NULL;
-
-/**
- * @var realdest
- * @since 0.1.0
- * @brief Chemin du fichier de destination s'il est différent de celui
- * donné.
- */
-static const char* realdest = NULL;
-
-/**
- * @var output
- * @since 0.1.0
- * @brief Flux du fichier compilé.
- */
-static FILE* output = NULL;
 
 /** @} */
 
@@ -85,9 +51,10 @@ int lmc_compile(const char* source, const char* dest)
 {
     int status = 0;
 
-    // On prépare les descripteur de fichiers des sources et
-    // destination.
-    output = lmc_compilerOpenFiles(source, dest);
+    // Si la destination n'est pas précisée, on utilise la valeur par
+    // défaut.
+    const char* output = dest && *dest ? dest : LMC_BIN;
+
     // On initialise startpos à LMC_MAXROM+1 car elle équivaut à la
     // position 0 du programme dans la mémoire (juste après
     // l'argument de l'instruction JUMP du bootstrap). Si aucune
@@ -104,32 +71,17 @@ int lmc_compile(const char* source, const char* dest)
     // On analyse le fichier source, et on inscrit les données
     // compilées dans le fichier de destination. On ferme ensuite la
     // source une fois l'analyse terminée.
+    if (!(yyin = fopen(source, "r"))) err(EXIT_FAILURE, "%s", source);
     status = yyparse(&lexer);
     fclose(yyin);
 
     // On écrit dans le fichier de destination qu'on ferme ensuite. On
     // indique aussi le chemin du fichier de destination s'il est
     // différent de celui précisé (ou que dest est NULL, en cas).
-    lmc_compilerWrite(&lexer);
-    fclose(output);
-    if (!status && realdest != dest) printf("LMC: compiled to '%s'\n", realdest);
+    lmc_compilerWrite(&lexer, output);
+    if (!status && output != dest) printf("LMC: compiled to '%s'\n", output);
 
     return status;
-}
-
-static FILE* lmc_compilerOpenFiles(const char* restrict source, const char* dest)
-{
-    FILE* output;
-
-    // On modifie la source de stdin au fichier donné.
-    src = source;
-    if (!(yyin = fopen(source, "r")))
-        err(EXIT_FAILURE, "%s", source);
-
-    realdest = dest && *dest ? dest : LMC_BIN;
-    if (!(output = fopen(realdest, "w")))
-        err(EXIT_FAILURE, "%s", realdest);
-    return output;
 }
 
 static void lmc_compilerCallback(LmcMemoryArray* array, LmcRam code, LmcRam value)
@@ -145,9 +97,12 @@ static void lmc_compilerCallback(LmcMemoryArray* array, LmcRam code, LmcRam valu
     }
 }
 
-static void lmc_compilerWrite(LmcLexer* lexer)
+static void lmc_compilerWrite(LmcLexer* lexer, const char* restrict path)
 {
+    FILE* output = NULL;
     size_t towrite = lexer->values.current;
-    if (fwrite(lexer->values.values, sizeof(LmcRam), towrite, output) != towrite)
-        err(EXIT_FAILURE, "%s", lexer->desc);
+    if (!(output = fopen(path, "w"))
+        || fwrite(lexer->values.values, sizeof(LmcRam), towrite, output) != towrite)
+        err(EXIT_FAILURE, "%s", path);
+    fclose(output);
 }
