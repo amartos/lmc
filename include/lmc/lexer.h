@@ -26,7 +26,7 @@
  * @typedef LmcLexerCallback
  * @brief Type de fonction de rappel à utiliser lors de la traduction.
  */
-typedef void (LmcLexerCallback)(LmcRam* header, LmcRam code, LmcRam arg);
+typedef void (*LmcLexerCallback)(LmcRam* header, LmcRam code, LmcRam arg);
 
 // Variables et fonctions du module flex nécessaires au bon
 // fonctionnement lors de l'analyse de texte.
