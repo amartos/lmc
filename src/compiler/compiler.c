@@ -75,11 +75,14 @@ int lmc_compile(const char* source, const char* dest)
     status = yyparse(&lexer);
     fclose(yyin);
 
-    // On écrit dans le fichier de destination qu'on ferme ensuite. On
-    // indique aussi le chemin du fichier de destination s'il est
-    // différent de celui précisé (ou que dest est NULL, en cas).
-    lmc_compilerWrite(&lexer, output);
-    if (!status && output != dest) printf("LMC: compiled to '%s'\n", output);
+    // On écrit dans le fichier de destination uniquement si l'analyse
+    // est OK. On indique aussi le chemin du fichier de destination
+    // s'il est différent de celui précisé (ou que dest est NULL, en
+    // cas).
+    if (!status) {
+        lmc_compilerWrite(&lexer, output);
+        if (output != dest) printf("LMC: compiled to '%s'\n", output);
+    }
 
     return status;
 }
