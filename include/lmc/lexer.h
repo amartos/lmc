@@ -18,6 +18,7 @@
 #include "lmc/specs.h"
 
 #include <err.h>
+#include <errno.h>
 #include <search.h>
 #include <stdio.h>
 #include <stdlib.h>
