@@ -24,6 +24,7 @@
 #ifndef LMC_H_
 #define LMC_H_
 
+#include "lmc/specs.h"
 #include "lmc/computer.h" // Le module principal de l'ordinateur en papier.
 #include "lmc/compiler.h" // Le module de compilation des programmes.
 

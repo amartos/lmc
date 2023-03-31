@@ -15,7 +15,7 @@
 #ifndef LMC_LEXER_H_
 #define LMC_LEXER_H_
 
-#include "lmc/computer.h"
+#include "lmc/specs.h"
 
 #include <err.h>
 #include <search.h>

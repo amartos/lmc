@@ -13,7 +13,7 @@
  */
 
 #include "tests/common.h"
-#include "lmc/computer.h"
+#include "lmc/specs.h"
 #include "lmc/lexer.h"
 #include "lmc/compiler.h"
 

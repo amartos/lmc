@@ -15,7 +15,7 @@
 #ifndef LMC_COMPILER_H_
 #define LMC_COMPILER_H_
 
-#include "lmc/computer.h"
+#include "lmc/specs.h"
 #include "lmc/lexer.h"
 
 #include <err.h>

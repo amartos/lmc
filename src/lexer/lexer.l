@@ -17,7 +17,7 @@
 
 %{
 
-#include "lmc/computer.h"
+#include "lmc/specs.h"
 #include "lmc/lexer.h"
 
 /**
