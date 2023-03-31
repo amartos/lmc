@@ -104,7 +104,7 @@ typedef struct LmcComputer {
 
 /******************************************************************************
  * @}
- * @name Fonctions principales de l'ordinateur
+ * @name Fonctions de l'ordinateur
  * @{
  ******************************************************************************/
 // clang-format on
