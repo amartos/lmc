@@ -23,6 +23,17 @@
 #include <stdlib.h>
 
 /**
+ * @struct LmcRamArray
+ * @since 0.1.0
+ * @brief Table de valeurs LmcRam.
+ */
+typedef struct LmcRamArray {
+    LmcRam* values; /**< Table des valeurs. */
+    size_t max;     /**< Taille maximale de LmcRamArray::values. */
+    size_t current; /**< Premier index libre de LmcRamArray::values. */
+} LmcRamArray;
+
+/**
  * @typedef LmcLexerCallback
  * @since 0.1.0
  * @brief Type de fonction de rappel à utiliser lors de la traduction.
@@ -36,7 +47,7 @@
  * @param code Le premier élément ajouté.
  * @param value Le second élément ajouté.
  */
-typedef void (*LmcLexerCallback)(LmcMemoryArray* array, LmcRam code, LmcRam arg);
+typedef void (*LmcLexerCallback)(LmcRamArray* array, LmcRam code, LmcRam arg);
 
 /**
  * @struct LmcLexer
@@ -47,7 +58,7 @@ typedef void (*LmcLexerCallback)(LmcMemoryArray* array, LmcRam code, LmcRam arg)
 typedef struct LmcLexer {
     const char* desc;          /**< Descriptif de la traduction. */
     LmcLexerCallback callback; /**< Fonction gérant la table de traduction. */
-    LmcMemoryArray values;     /**< Table de traduction. */
+    LmcRamArray values;        /**< Table de traduction. */
 } LmcLexer;
 
 // Variables et fonctions du module flex nécessaires au bon
@@ -85,7 +96,7 @@ const char* lmc_keyword(LmcOpCodes opcode) __attribute__((returns_nonnull));
  * @param code Le premier élément ajouté.
  * @param value Le second élément ajouté.
  */
-void lmc_append(LmcMemoryArray* array, LmcRam code, LmcRam value)
+void lmc_append(LmcRamArray* array, LmcRam code, LmcRam value)
     __attribute__((nonnull (1)));
 
 #endif // LMC_LEXER_H_

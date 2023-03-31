@@ -27,11 +27,11 @@
 // clang-format on
 
 // Variable contenant du code traduit pour comparaison.
-LmcMemoryArray bytes = {0};
+LmcRamArray bytes = {0};
 
 // Callback vérifiant la traduction de code.
 __attribute__((nonnull (1)))
-void lmc_lexerCheckerCallback(LmcMemoryArray* array, LmcRam code, LmcRam value)
+void lmc_lexerCheckerCallback(LmcRamArray* array, LmcRam code, LmcRam value)
 {
     LmcRam hex[2] = { code, value };
     assert(!memcmp(hex, &array->values[array->current], sizeof(LmcRam)*2));
@@ -40,7 +40,7 @@ void lmc_lexerCheckerCallback(LmcMemoryArray* array, LmcRam code, LmcRam value)
 
 // Callback qui interromp le programme s'il est appelé.
 __attribute__((noreturn))
-void lmc_lexerFatalCallback(LmcMemoryArray* array, LmcRam a, LmcRam b)
+void lmc_lexerFatalCallback(LmcRamArray* array, LmcRam a, LmcRam b)
 {
     (void) array;
     (void) a;
@@ -141,7 +141,7 @@ SCCROLL_TEST(analysis)
 SCCROLL_TEST(append)
 {
     LmcRam values[10] = { 0 };
-    LmcMemoryArray array = { .values = values, .max = 10, };
+    LmcRamArray array = { .values = values, .max = 10, };
     lmc_append(&array, 42, 23);
     assert(array.values[0] == 42);
     assert(array.values[1] == 23);
@@ -159,7 +159,7 @@ SCCROLL_TEST(
 )
 {
     LmcRam values[10] = { 0 };
-    LmcMemoryArray array = { .values = values, .max = 10, .current = 9, };
+    LmcRamArray array = { .values = values, .max = 10, .current = 9, };
     lmc_append(&array, 42, 23);
     assertMsg(false, "Forbidden point reached");
 }

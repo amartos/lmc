@@ -98,7 +98,7 @@ LmcOpCodes lmc_opcode(char* keyword)
     return value;
 }
 
-void lmc_append(LmcMemoryArray* array, LmcRam code, LmcRam value)
+void lmc_append(LmcRamArray* array, LmcRam code, LmcRam value)
 {
     if (array->current >= array->max-1) {
         errno = ENOMEM;

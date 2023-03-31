@@ -21,7 +21,7 @@
  * @param lexer Les informations de traduction.
  * @param array La table de traduction.
  */
-static void lmc_compilerCallback(LmcMemoryArray* array, LmcRam code, LmcRam value);
+static void lmc_compilerCallback(LmcRamArray* array, LmcRam code, LmcRam value);
 
 /**
  * @since 0.1.0
@@ -82,7 +82,7 @@ int lmc_compile(const char* source, const char* dest)
     return status;
 }
 
-static void lmc_compilerCallback(LmcMemoryArray* array, LmcRam code, LmcRam value)
+static void lmc_compilerCallback(LmcRamArray* array, LmcRam code, LmcRam value)
 {
     switch(code)
     {
