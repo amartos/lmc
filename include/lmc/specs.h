@@ -105,6 +105,27 @@ typedef enum __attribute__((__packed__)) LmcOpCodes {
     START = PTR,        /**< Indique une adresse de démarrage. */
 } LmcOpCodes;
 
+/**
+ * @def LMC_PROGLANG
+ * @since 0.1.0
+ * @brief Macro de conversion opcode <-> chaîne de caractères.
+ */
+#define LMC_PROGLANG(macro)                     \
+    macro(VAR,"@")                              \
+    macro(INDIR,"*@")                           \
+    macro(ADD,"add")                            \
+    macro(SUB,"sub")                            \
+    macro(NAND,"nand")                          \
+    macro(LOAD,"load")                          \
+    macro(STORE,"store")                        \
+    macro(IN,"in")                              \
+    macro(OUT,"out")                            \
+    macro(JUMP,"jump")                          \
+    macro(BRN,"brn")                            \
+    macro(BRZ,"brz")                            \
+    macro(HLT,"stop")                           \
+    macro(START,"start")
+
 // clang-format off
 /******************************************************************************
  * @}

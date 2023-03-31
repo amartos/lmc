@@ -32,6 +32,17 @@ static void lmc_hcreate(void) __attribute__((constructor));
 // standard, pour l'inscrire automatiquement à l'exit.
 void hdestroy(void) __attribute__((destructor));
 
+/**
+ * @def LMC_LEXERSWITCH
+ * @since 0.1.0
+ * @brief Macro générant un case de switch renvoyant la chaîne donnée
+ * avec l'opcode.
+ * @param opcode Un code d'opération.
+ * @param string La chaîne contenant une commande correspondant au
+ * code d'opération.
+ */
+#define LMC_LEXERSWITCH(opcode,string) case opcode: return string;
+
 // clang-format off
 
 /******************************************************************************
@@ -44,21 +55,8 @@ const char* lmc_keyword(LmcOpCodes opcode)
 {
     switch (opcode)
     {
-    case VAR:   return "@";
-    case INDIR: return "*@";
-    case ADD:   return "add";
-    case SUB:   return "sub";
-    case NAND:  return "nand";
-    case LOAD:  return "load";
-    case STORE: return "store";
-    case IN:    return "in";
-    case OUT:   return "out";
-    case JUMP:  return "jump";
-    case BRN:   return "brn";
-    case BRZ:   return "brz";
-    case HLT:   return "stop";
-    case START: return "start";
-    default:    return "";
+    LMC_PROGLANG(LMC_LEXERSWITCH);
+    default: return "";
     }
 }
 
