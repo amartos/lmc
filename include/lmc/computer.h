@@ -30,7 +30,7 @@
 // clang-format off
 
 /******************************************************************************
- * @name La mémoire
+ * @name Structure de l'ordinateur en (e-)papier
  * @{
  ******************************************************************************/
 // clang-format on
@@ -48,15 +48,6 @@ typedef struct LmcMemory {
     LmcRam ram[LMC_MAXRAM]; /**< Le stockage mémoire. */
 } LmcMemory;
 
-// clang-format off
-
-/******************************************************************************
- * @}
- * @name L'unité de contrôle
- * @{
- ******************************************************************************/
-// clang-format on
-
 /**
  * @struct LmcControlUnit
  * @since 0.1.0
@@ -70,15 +61,6 @@ typedef struct LmcControlUnit {
     LmcRam pc;     /**< Le registre 'Program Counter'. */
 } LmcControlUnit;
 
-// clang-format off
-
-/******************************************************************************
- * @}
- * @name L'unité arithmétique et logique
- * @{
- ******************************************************************************/
-// clang-format on
-
 /**
  * @struct LmcLogicUnit
  * @since 0.1.0
@@ -88,15 +70,6 @@ typedef struct LmcLogicUnit {
     LmcRam acc;    /**< L'accumulateur. */
     LmcRam opcode; /**< Le registre pour les codes d'opération. */
 } LmcLogicUnit;
-
-// clang-format off
-
-/******************************************************************************
- * @}
- * @name Le bus et les Entrées/Sorties
- * @{
- ******************************************************************************/
-// clang-format on
 
 /**
  * @struct Bus
@@ -113,14 +86,6 @@ typedef struct LmcBus {
                          * venir. */
 } LmcBus;
 
-// clang-format off
-
-/******************************************************************************
- * @}
- * @name L'ordinateur en (e-)papier
- * @{
- ******************************************************************************/
-// clang-format on
 
 /**
  * @struct LmcComputer
