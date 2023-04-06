@@ -461,6 +461,7 @@ static void lmc_indirection(LmcRam type)
 
 static bool lmc_operation(LmcRam operation)
 {
+    LmcRam* value = NULL;
     switch (operation) {
     case BRN:   if (!(lmc_hal.alu.acc & LMC_SIGN)) break; goto op_jump;
     case BRZ:   if (lmc_hal.alu.acc != 0) break; goto op_jump;
@@ -479,20 +480,24 @@ static bool lmc_operation(LmcRam operation)
 #else
     case NAND:  lmc_calc(); break;
     case LOAD:  lmc_hal.alu.acc = lmc_hal.mem.cache.wr; break;
-    case OUT:   lmc_busOutput(); break;
-    case IN:    lmc_busInput(); __attribute__((fallthrough));
-    case STORE:
-        lmc_rwMemory(
-            lmc_hal.mem.cache.wr,
-            operation == STORE ? &lmc_hal.alu.acc : &lmc_hal.bus.buffer,
-            'w'
-        );
+    case OUT:
+        lmc_rwMemory(lmc_hal.mem.cache.sr, &lmc_hal.mem.cache.wr, 'r');
+        lmc_busOutput();
         break;
+    case IN:
+        lmc_busInput();
+        value = &lmc_hal.bus.buffer;
+        goto op_write;
+    case STORE: value = &lmc_hal.alu.acc; goto op_write;
+    op_write: lmc_rwMemory(lmc_hal.mem.cache.sr, value, 'w'); break;
     case JUMP:
     op_jump:    lmc_hal.cu.pc = lmc_hal.mem.cache.wr; return false;
     case HLT:   return (lmc_hal.on = false);
 #endif
-    default:    break;
+    default:
+        // Pour _UCODES où la variable est inutilisée.
+        (void) value;
+        break;
     }
     return true;
 }
