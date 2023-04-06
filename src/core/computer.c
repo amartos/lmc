@@ -324,10 +324,10 @@ static void lmc_dump(LmcRam start, LmcRam end)
 {
 #ifdef DEBUG
     usleep(0.1*1000*1000);
-    for (int i = start; i <= end && i < LMC_MAXRAM; ++i)
+    for (int addr = start; addr <= end && addr < LMC_MAXRAM; ++addr)
     {
-        if (!(i & 0x0f) || start == end) fprintf(stderr, "\n%02x ", i);
-        fprintf(stderr, "%02x ", lmc_hal.mem.ram[i]);
+        if (!(addr & 0x0f) || start == end) fprintf(stderr, "\n%02x ", addr);
+        fprintf(stderr, "%02x ", lmc_hal.mem.ram[addr]);
     }
     fprintf(stderr, "\n");
 #else
