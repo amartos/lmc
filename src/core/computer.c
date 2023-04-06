@@ -197,6 +197,14 @@ static void lmc_busOutput(void);
  */
 static void lmc_calc(void);
 
+/**
+ * @since 0.1.0
+ * @brief Retrouve l'opérande de l'opération stockée en mémoire, en
+ * fonction du niveau d'indirection indiqué.
+ * @param type Le type d'indirection voulu.
+ */
+static void lmc_indirection(LmcRam type);
+
 // clang-format off
 
 /******************************************************************************
@@ -205,14 +213,6 @@ static void lmc_calc(void);
  * @{
  ******************************************************************************/
 // clang-format on
-
-/**
- * @since 0.1.0
- * @brief Retrouve l'opérande de l'opération stockée en mémoire, en
- * fonction du niveau d'indirection indiqué.
- * @param type Le type d'indirection voulu.
- */
-static void lmc_indirection(LmcRam type);
 
 /**
  * @since 0.1.0
