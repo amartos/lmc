@@ -447,59 +447,6 @@ static bool lmc_phaseTwo(void)
     LmcRam operation = lmc_hal.alu.opcode & ~(INDIR);
     LmcRam value     = lmc_hal.alu.opcode & INDIR;
 
-    // En codant "à la brute", on obtient normalement ce gros switch
-    // prenant en compte toutes les possibilités de combinaisons
-    // d'opérations et de recherche d'opérande (même si toutes ne sont
-    // pas forcément pertinentes).
-    // Ce code est cependant assez moche: beaucoup de répétitions
-    // inutiles et donc plus difficile à maintenir que les
-    // alternatives. Alors, certes, on peut voir assez bien la suite
-    // d'opérations effectuées par l'ordinateur (ce pourquoi j'ai
-    // laissé ce switch en commentaires pour le devoir), mais une
-    // amélioration est possible et permet de rendre le code bien plus
-    // lisible, au détriment d'une (très) légère baisse de lisibilité
-    // de la suite d'opérations. Cf. le code après ce commentaire.
-    //
-    // TODO: vérifier les listes de codes
-    // switch (lmc_hal.alu.opcode) {
-    // case ADD | INDIR:   lmc_useries(ADDOPC, PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, DOCALC, NULL); break;
-    // case ADD | VAR:     lmc_useries(ADDOPC, PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, DOCALC, NULL); break;
-    // case ADD:           lmc_useries(ADDOPC, PCTOSR, SVTOWR, DOCALC, NULL); break;
-    // case SUB | INDIR:   lmc_useries(SUBOPC, PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, DOCALC, NULL); break;
-    // case SUB | VAR:     lmc_useries(SUBOPC, PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, DOCALC, NULL); break;
-    // case SUB:           lmc_useries(SUBOPC, PCTOSR, SVTOWR, DOCALC, NULL); break;
-    // case NAND | INDIR:  lmc_useries(NANDOP, PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, DOCALC, NULL); break;
-    // case NAND | VAR:    lmc_useries(NANDOP, PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, DOCALC, NULL); break;
-    // case NAND:          lmc_useries(NANDOP, PCTOSR, SVTOWR, DOCALC, NULL); break;
-    // case LOAD | INDIR:  lmc_useries(PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOAC, NULL); break;
-    // case LOAD | VAR:    lmc_useries(PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOAC, NULL); break;
-    // case LOAD:          lmc_useries(PCTOSR, SVTOWR, WRTOAC, NULL); break;
-    // case STORE | INDIR: lmc_useries(PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, ACTOWR, WRTOSV, NULL); break;
-    // case STORE | VAR:   lmc_useries(PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, ACTOWR, WRTOSV, NULL); break;
-    // case STORE:         lmc_useries(PCTOSR, SVTOWR, ACTOWR, WRTOSV, NULL); break;
-    // case IN | INDIR:    lmc_useries(PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, INTOSV, NULL); break;
-    // case IN | VAR:      lmc_useries(PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, INTOSV, NULL); break;
-    // case IN:            lmc_useries(PCTOSR, SVTOWR, INTOSV, NULL); break;
-    // case OUT | INDIR:   lmc_useries(PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOOU, NULL); break;
-    // case OUT | VAR:     lmc_useries(PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOOU, NULL); break;
-    // case OUT:           lmc_useries(PCTOSR, SVTOWR, WRTOOU, NULL); break;
-    // case HLT | INDIR:   lmc_useries(PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, LMCHLT, NULL); break;
-    // case HLT | VAR:     lmc_useries(PCTOSR, SVTOWR, WRTOAD, ADTOSR, SVTOWR, LMCHLT, NULL); break;
-    // case HLT:           lmc_useries(PCTOSR, SVTOWR, LMCHLT, NULL); break;
-    // case JUMP | INDIR:  lmc_useries(PCTOSR, SVTOWR, WRTOPC, NULL); break;
-    // case JUMP | VAR:    lmc_useries(PCTOSR, SVTOWR, WRTOPC, NULL); break;
-    // case JUMP:          lmc_useries(PCTOSR, SVTOWR, WRTOPC, NULL); break;
-    // case BRN | INDIR:   if (lmc_hal.alu.acc < 0)  lmc_useries(PCTOSR, SVTOWR, WRTOPC, NULL); break;
-    // case BRN | VAR:     if (lmc_hal.alu.acc < 0)  lmc_useries(PCTOSR, SVTOWR, WRTOPC, NULL); break;
-    // case BRN:           if (lmc_hal.alu.acc < 0)  lmc_useries(PCTOSR, SVTOWR, WRTOPC, NULL); break;
-    // case BRZ | INDIR:   if (lmc_hal.alu.acc == 0) lmc_useries(PCTOSR, SVTOWR, WRTOPC, NULL); break;
-    // case BRZ | VAR:     if (lmc_hal.alu.acc == 0) lmc_useries(PCTOSR, SVTOWR, WRTOPC, NULL); break;
-    // case BRZ:           if (lmc_hal.alu.acc == 0) lmc_useries(PCTOSR, SVTOWR, WRTOPC, NULL); break;
-    // default: break;
-    // }
-
-    // Le code ci-dessous est bien plus digeste au final.
-
     // On modifie le code opératoire au besoin.
     switch (operation) {
     case ADD:  opcode = ADDOPD; goto op_calc;
