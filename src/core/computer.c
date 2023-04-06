@@ -326,10 +326,13 @@ static void lmc_dump(LmcRam start, LmcRam end)
     usleep(0.1*1000*1000);
     for (int addr = start; addr <= end && addr < LMC_MAXRAM; ++addr)
     {
-        if (!(addr & 0x0f) || start == end) fprintf(stderr, "\n%02x ", addr);
-        fprintf(stderr, "%02x ", lmc_hal.mem.ram[addr]);
+        lmc_rwMemory(addr, &lmc_hal.mem.cache.wr, 'r');
+        if (!(addr & 0x0f) || start == end) {
+            lmc_hal.bus.newline = true;
+            lmc_busPrint(LMC_HEXFMT ": ", LMC_MAXDIGITS, addr);
+        }
+        lmc_busOutput();
     }
-    fprintf(stderr, "\n");
 #else
     (void) start;
     (void) end;
