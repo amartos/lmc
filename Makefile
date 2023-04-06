@@ -187,6 +187,10 @@ install: $(PROJECT)
 	@cp $(PROJECT) $(INSTALL)/
 	@$(INFO) $(PROJECT) installed in $(INSTALL)
 
+# @brief Exécute les tests du projet (unitaires, couverture, etc...) sans les microcodes
+tests-no-ucodes: CFLAGS = $(shell grep -v "D_UCODES" compile_flags.txt)
+tests-no-ucodes: tests
+
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
 tests: CFLAGS += -g -O0 --coverage
 tests: LDLIBS += -L$(LIBS) -lsccroll $(shell $(MOCKS) $*.c) --coverage
