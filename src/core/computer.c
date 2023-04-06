@@ -85,11 +85,14 @@ static void lmc_ucode(LmcUcodes ucode);
 
 /**
  * @since 0.1.0
- * @brief Affiche le contenu de la mémoire de l'ordinateur.
+ * @brief Affiche le contenu de la mémoire de l'ordinateur entre deux
+ * adresses.
  * @attention N'est fonctionnel que si la macro #DEBUG est définie à
  * la compilation.
+ * @param start L'adresse de début.
+ * @param end L'adresse de fin.
  */
-static void lmc_dump(void);
+static void lmc_dump(LmcRam start, LmcRam end);
 
 /**
  * @since 0.1.0
@@ -310,20 +313,26 @@ LmcRam lmc_shell(const char* restrict filepath)
 
     // On exécute le programme.
     lmc_hal.on = true; // Hello Dave. You are looking well today.
-    while (lmc_hal.on) lmc_dump(), lmc_phaseOne(), lmc_phaseTwo() ? lmc_phaseThree() : 0;
+    while (lmc_hal.on) {
+        lmc_dump(0, LMC_MAXRAM-1);
+        lmc_phaseOne(), lmc_phaseTwo() ? lmc_phaseThree() : 0;
+    }
     return lmc_hal.mem.cache.wr; // code de status du programme
 }
 
-static void lmc_dump(void)
+static void lmc_dump(LmcRam start, LmcRam end)
 {
 #ifdef DEBUG
     usleep(0.1*1000*1000);
-    for (int i = 0; i < LMC_MAXRAM; ++i)
+    for (int i = start; i <= end && i < LMC_MAXRAM; ++i)
     {
-        if (!(i & 0x0f)) fprintf(stderr, "\n%02x ", i);
+        if (!(i & 0x0f) || start == end) fprintf(stderr, "\n%02x ", i);
         fprintf(stderr, "%02x ", lmc_hal.mem.ram[i]);
     }
     fprintf(stderr, "\n");
+#else
+    (void) start;
+    (void) end;
 #endif // DEBUG
 }
 
