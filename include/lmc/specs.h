@@ -79,14 +79,14 @@ typedef enum LmcMemoryCaracs {
  */
 typedef enum __attribute__((__packed__)) LmcOpCodes {
     // Primitives
-    INV = 0x01, /**< Inverse la valeur/signification. */
-    NOT = 0x02, /**< Donne le NON booléen de la valeur. */
-    HLT = 0x04, /**< Éteint l'ordinateur jusqu'au prochain programme. */
-    WRT = 0x08, /**< Écrit une valeur en mémoire. */
-    JMP = 0x10, /**< Change l'emplacement mémoire courant. */
-    ADD = 0x20, /**< Addition. */
-    VAR = 0x40, /**< La valeur est une adresse de la mémoire. */
-    PTR = 0x80, /**< La valeur est un pointeur. */
+    INV = 1 << 0, /**< Inverse la valeur/signification. */
+    NOT = 1 << 1, /**< Donne le NON booléen de la valeur. */
+    HLT = 1 << 2, /**< Éteint l'ordinateur jusqu'au prochain programme. */
+    WRT = 1 << 3, /**< Écrit une valeur en mémoire. */
+    JMP = 1 << 4, /**< Change l'emplacement mémoire courant. */
+    ADD = 1 << 5, /**< Addition. */
+    VAR = 1 << 6, /**< La valeur est une adresse de la mémoire. */
+    PTR = 1 << 7, /**< La valeur est un pointeur. */
 
     // Combinaisons
     INDIR = VAR | PTR, /**< Déréférence un pointeur. */
