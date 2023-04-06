@@ -42,6 +42,7 @@ typedef enum LmcMemoryCaracs {
     LMC_MAXRAM    = 0x100,              /**< Quantité de mémoire maximale (octets). */
     LMC_MAXROM    = 0x20,               /**< Quantité de mémoire en lecture seule (octets). */
     LMC_MAXDIGITS = sizeof(LmcRam) * 2, /**< Nombre de chiffres des valeurs de la mémoire. */
+    LMC_MEMCOL    = 0x0f,               /**< Nombre d'adresses par ligne de dump. */
     LMC_SIGN      = LMC_MAXRAM >> 1,    /**< Masque pour le bit de signe. */
 } LmcMemoryCaracs;
 

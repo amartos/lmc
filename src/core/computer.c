@@ -327,7 +327,7 @@ static void lmc_dump(LmcRam start, LmcRam end)
     for (int addr = start; addr <= end && addr < LMC_MAXRAM; ++addr)
     {
         lmc_rwMemory(addr, &lmc_hal.mem.cache.wr, 'r');
-        if (!(addr & 0x0f) || start == end) {
+        if (!(addr & LMC_MEMCOL) || start == end) {
             lmc_hal.bus.newline = true;
             lmc_busPrint(LMC_HEXFMT ": ", LMC_MAXDIGITS, addr);
         }
