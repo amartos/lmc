@@ -198,12 +198,28 @@ static void lmc_busOutput(void);
 static void lmc_calc(void);
 
 /**
+ * since 0.1.0
+ * @brief Détermine si l'opcode doit changer.
+ * @param operation Le code d'opération sans les informations
+ * d'indirection.
+ */
+static void lmc_opcalc(LmcRam operation);
+
+/**
  * @since 0.1.0
  * @brief Retrouve l'opérande de l'opération stockée en mémoire, en
  * fonction du niveau d'indirection indiqué.
  * @param type Le type d'indirection voulu.
  */
 static void lmc_indirection(LmcRam type);
+
+/**
+ * @since 0.1.0
+ * @brief Effectue une opération.
+ * @param operation Le code d'opération sans les informations
+ * d'indirection.
+ */
+static bool lmc_operation(LmcRam operation);
 
 // clang-format off
 
@@ -395,6 +411,26 @@ static void lmc_calc(void)
     }
 }
 
+static void lmc_opcalc(LmcRam operation)
+{
+    LmcRam opcode = 0;
+    switch (operation) {
+#ifdef _UCODES
+    case ADD:  opcode = ADDOPD; goto op_calc;
+    case SUB:  opcode = SUBOPD; goto op_calc;
+    case NAND: opcode = NANDOP; goto op_calc;
+    default:
+    op_calc:   lmc_ucode(opcode); break; // si opcode est nul, ne fait rien
+#else
+    case ADD:  __attribute__((fallthrough));
+    case SUB:  __attribute__((fallthrough));
+    case NAND: opcode = operation;          goto op_calc;
+    default:   opcode = lmc_hal.alu.opcode; goto op_calc;
+    op_calc:   lmc_hal.alu.opcode = opcode; break;
+#endif
+    }
+}
+
 static void lmc_indirection(LmcRam type)
 {
     // On va chercher la valeur de l'opérande.
@@ -409,6 +445,44 @@ static void lmc_indirection(LmcRam type)
     default:    lmc_rwMemory(lmc_hal.mem.cache.sr, &lmc_hal.mem.cache.wr, 'r'); break;
 #endif
     }
+}
+
+static bool lmc_operation(LmcRam operation)
+{
+    switch (operation) {
+    case BRN:   if (!(lmc_hal.alu.acc & LMC_SIGN)) break; goto op_jump;
+    case BRZ:   if (lmc_hal.alu.acc != 0) break; goto op_jump;
+    case ADD:   __attribute__((fallthrough));
+    case SUB:   __attribute__((fallthrough));
+#ifdef _UCODES
+    case NAND:  lmc_ucode(DOCALC); break;
+    case LOAD:  lmc_ucode(WRTOAC); break;
+    case OUT:   lmc_useries(SVTOWR, WRTOOU, NULL); break;
+    case IN:    lmc_useries(WINPUT, INTOWR, NULL); goto op_write;
+    case STORE: lmc_ucode(ACTOWR);
+    op_write:   lmc_ucode(WRTOSV); break;
+    case JUMP:
+    op_jump:    lmc_ucode(WRTOPC); return false;
+    case HLT:   lmc_ucode(LMCHLT); return false;
+#else
+    case NAND:  lmc_calc(); break;
+    case LOAD:  lmc_hal.alu.acc = lmc_hal.mem.cache.wr; break;
+    case OUT:   lmc_busOutput(); break;
+    case IN:    lmc_busInput(); __attribute__((fallthrough));
+    case STORE:
+        lmc_rwMemory(
+            lmc_hal.mem.cache.wr,
+            operation == STORE ? &lmc_hal.alu.acc : &lmc_hal.bus.buffer,
+            'w'
+        );
+        break;
+    case JUMP:
+    op_jump:    lmc_hal.cu.pc = lmc_hal.mem.cache.wr; return false;
+    case HLT:   return (lmc_hal.on = false);
+#endif
+    default:    break;
+    }
+    return true;
 }
 
 static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
@@ -428,6 +502,44 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
     }
 }
 
+static void lmc_phaseOne(void) {
+#ifdef _UCODES
+    lmc_useries(PCTOSR, SVTOWR, WRTOOP, INCRPC, NULL);
+#else
+    lmc_rwMemory(lmc_hal.cu.pc++, &lmc_hal.alu.opcode, 'r');
+#endif
+}
+
+static bool lmc_phaseTwo(void)
+{
+    // On sépare le code indiquant où chercher l'opérande de
+    // celui de l'opération.
+    LmcRam operation = lmc_hal.alu.opcode & ~(INDIR);
+    LmcRam value     = lmc_hal.alu.opcode & INDIR;
+
+    // On modifie le code opératoire au besoin.
+    lmc_opcalc(operation);
+
+    // On va chercher la valeur de l'opérande.
+#ifdef _UCODES
+    lmc_ucode(PCTOSR);
+#else
+    lmc_hal.mem.cache.sr = lmc_hal.cu.pc;
+#endif
+    lmc_indirection(value);
+
+    // On lance l'opération.
+    return lmc_operation(operation);
+}
+
+static void lmc_phaseThree(void) {
+#ifdef _UCODES
+    lmc_ucode(INCRPC);
+#else
+    ++lmc_hal.cu.pc;
+#endif
+}
+
 #ifdef _UCODES
 
 // clang-format off
@@ -436,52 +548,6 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
  * Opérations avec microcodes.
  ******************************************************************************/
 // clang-format on
-
-static void lmc_phaseOne(void) { lmc_useries(PCTOSR, SVTOWR, WRTOOP, INCRPC, NULL); }
-
-static bool lmc_phaseTwo(void)
-{
-    // On sépare le code indiquant où chercher l'opérande de
-    // celui de l'opération.
-    LmcRam opcode    = 0;
-    LmcRam operation = lmc_hal.alu.opcode & ~(INDIR);
-    LmcRam value     = lmc_hal.alu.opcode & INDIR;
-
-    // On modifie le code opératoire au besoin.
-    switch (operation) {
-    case ADD:  opcode = ADDOPD; goto op_calc;
-    case SUB:  opcode = SUBOPD; goto op_calc;
-    case NAND: opcode = NANDOP; goto op_calc;
-    default:
-    op_calc:   lmc_ucode(opcode); break; // si opcode est nul, ne fait rien
-    }
-
-    // On va chercher la valeur de l'opérande.
-    lmc_ucode(PCTOSR);
-    lmc_indirection(value);
-
-    // On lance l'opération.
-    switch (operation) {
-    case ADD:   __attribute__((fallthrough));
-    case SUB:   __attribute__((fallthrough));
-    case NAND:  lmc_ucode(DOCALC); break;
-    case LOAD:  lmc_ucode(WRTOAC); break;
-    case OUT:   lmc_useries(SVTOWR, WRTOOU, NULL); break;
-    case IN:    lmc_useries(WINPUT, INTOWR, NULL); goto op_write;
-    case STORE: lmc_ucode(ACTOWR);
-    op_write:   lmc_ucode(WRTOSV); break;
-    case BRN:   if (!(lmc_hal.alu.acc & LMC_SIGN)) break; goto op_jump;
-    case BRZ:   if (lmc_hal.alu.acc != 0) break; goto op_jump;
-    case JUMP:
-    op_jump:    lmc_ucode(WRTOPC); return false;
-    case HLT:   lmc_ucode(LMCHLT); return false;
-    default:    break;
-    }
-
-    return true;
-}
-
-static void lmc_phaseThree(void) { lmc_ucode(INCRPC); }
 
 static void lmc_useries(unsigned int ucode, ...)
 {
@@ -537,54 +603,5 @@ static void lmc_ucode(LmcUcodes ucode)
     default: break;
     }
 }
-
-#else
-
-// clang-format off
-
-/******************************************************************************
- * Opérations sans microcodes
- ******************************************************************************/
-// clang-format on
-
-static void lmc_phaseOne(void) { lmc_rwMemory(lmc_hal.cu.pc++, &lmc_hal.alu.opcode, 'r'); }
-
-static bool lmc_phaseTwo(void)
-{
-    // On sépare le code indiquant où chercher l'opérande de
-    // celui de l'opération.
-    LmcRam operation = lmc_hal.alu.opcode & ~(INDIR);
-
-    // On va chercher la valeur de l'opérande.
-    lmc_hal.mem.cache.sr = lmc_hal.cu.pc;
-    lmc_indirection();
-
-    // On lance l'opération.
-    switch (operation) {
-    case ADD:   __attribute__((fallthrough));
-    case SUB:   __attribute__((fallthrough));
-    case NAND:  lmc_calc(); break;
-    case LOAD:  lmc_hal.alu.acc = lmc_hal.mem.cache.wr; break;
-    case OUT:   lmc_busOutput(); break;
-    case IN:    lmc_busInput(); __attribute__((fallthrough));
-    case STORE:
-        lmc_rwMemory(
-            lmc_hal.mem.cache.wr,
-            operation == STORE ? &lmc_hal.alu.acc : &lmc_hal.bus.buffer,
-            'w'
-        );
-        break;
-    case BRN:   if (!(lmc_hal.alu.acc & LMC_SIGN)) break; goto op_jump;
-    case BRZ:   if (operation == BRZ && lmc_hal.alu.acc != 0) break; goto op_jump;
-    case JUMP:
-    op_jump:    lmc_hal.cu.pc = lmc_hal.mem.cache.wr; return false;
-    case HLT:   return (lmc_hal.on = false);
-    default:    break;
-    }
-
-    return true;
-}
-
-static void lmc_phaseThree(void) { ++lmc_hal.cu.pc; }
 
 #endif // _UCODES
