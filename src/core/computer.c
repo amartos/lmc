@@ -16,6 +16,26 @@
 // clang-format off
 
 /******************************************************************************
+ * @name Exécution
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @since 0.1.0
+ * @brief Exécute un programme avec ou sans le debugger.
+ * @param filepath Le chemin d'un fichier compilé à exécuter, ou NULL
+ * pour entrer en mode de programmation interactive.
+ * @param debug Drapeau indiquant d'allumer (@c true) ou pas (@c
+ * false) le debugger.
+ * @return La valeur du registre mot à l'extinction.
+ */
+static LmcRam lmc_exec(const char* restrict filepath, bool debug);
+
+// clang-format off
+
+/******************************************************************************
+ * @}
  * @name Debugging
  * @{
  ******************************************************************************/
@@ -23,10 +43,58 @@
 
 /**
  * @since 0.1.0
+ * @def LMC_DBGPROMPT
+ * @since 0.1.0
+ * @brief L'invite de commande en mode de debug.
+ */
+#define LMC_DBGPROMPT                                       \
+    "PC: " LMC_HEXFMT ", ACC: " LMC_HEXFMT " " LMC_PROMPT,  \
+        LMC_MAXDIGITS, lmc_hal.cu.pc,                       \
+        LMC_MAXDIGITS, lmc_hal.alu.acc
+
+/**
+ * @since 0.1.0
+ * @brief Lance l'étape du debugger.
+ * @return @c true pour passer à l'étape suivante, @c false pour
+ * rester dans le mode debug.
+ */
+static bool lmc_debug(void);
+
+/**
+ * @since 0.1.0
+ * @brief Effectue la phase 1 du debuggage.
+ *
+ * Affiche la valeur de l'adresse courante si elle celle-ci est
+ * stockée dans LmcDebugger::prt, et indique si le debugger doit
+ * s'arrêter pour demande d'instructions.
+ * @return false pour sauter la phase de debug, true pour la
+ * continuer.
+ */
+static bool lmc_dbg_phaseOne(void);
+
+/**
+ * @since 0.1.0
+ * @brief Effectue la phase 2 du debugger.
+ *
+ * Affiche les valeurs de PC et ACC, puis attend des instructions de
+ * l'utilisateur.
+ */
+static void lmc_dbg_phaseTwo(void);
+
+/**
+ * @since 0.1.0
+ * @brief Effectue la phase 3 du debugger.
+ *
+ * Exécute la commande entrée par l'utilisateur en phase 2.
+ * @return false pour stopper la phase de debug, true pour la
+ * continuer.
+ */
+static bool lmc_dbg_phaseThree(void);
+
+/**
+ * @since 0.1.0
  * @brief Affiche le contenu de la mémoire de l'ordinateur entre deux
  * adresses.
- * @attention N'est fonctionnel que si la macro #DEBUG est définie à
- * la compilation.
  * @param start L'adresse de début.
  * @param end L'adresse de fin.
  */
@@ -51,9 +119,10 @@ static void lmc_phaseOne(void);
  * @since 0.1.0
  * @brief Effectue la phase II: "décodage de l'instruction, recherche
  * de l'opérande et calcul".
+ * @param debug Indique si la phase 2 est lancée par le debugger.
  * @return true si la phase III doit être sautée, sinon false.
  */
-static bool lmc_phaseTwo(void);
+static bool lmc_phaseTwo(bool debug);
 
 /**
  * @since 0.1.0
@@ -293,7 +362,11 @@ static const LmcComputer lmc_template = {
  ******************************************************************************/
 // clang-format on
 
-LmcRam lmc_shell(const char* restrict filepath)
+LmcRam lmc_shell(const char* restrict filepath) { return lmc_exec(filepath, false); }
+
+LmcRam lmc_dbgShell(const char* restrict filepath) { return lmc_exec(filepath, true); }
+
+static LmcRam lmc_exec(const char* restrict filepath, bool debug)
 {
     // on reset l'ordinateur pour éviter de mélanger les données de
     // plusieurs programmes.
@@ -308,9 +381,10 @@ LmcRam lmc_shell(const char* restrict filepath)
 
     // On exécute le programme.
     lmc_hal.on = true; // Hello Dave. You are looking well today.
+    lmc_hal.dbg.opcode = debug ? DEBUG : 0;
     while (lmc_hal.on) {
-        lmc_dump(0, LMC_MAXRAM-1);
-        lmc_phaseOne(), lmc_phaseTwo() ? lmc_phaseThree() : 0;
+        while(lmc_debug());
+        lmc_phaseOne(), lmc_phaseTwo(false) ? lmc_phaseThree() : 0;
     }
     return lmc_hal.mem.cache.wr; // code de status du programme
 }
@@ -322,10 +396,61 @@ LmcRam lmc_shell(const char* restrict filepath)
  ******************************************************************************/
 // clang-format on
 
+static bool lmc_debug(void)
+{
+    return
+        lmc_dbg_phaseOne()
+        ? (lmc_dbg_phaseTwo(), lmc_dbg_phaseThree())
+        : false;
+}
+
+static bool lmc_dbg_phaseOne(void)
+{
+    // On vérifie si l'ordinateur n'est pas en phase d'extinction, et
+    // si le debugger est allumé.
+    if (!(lmc_hal.on && lmc_hal.dbg.opcode))
+        return false;
+
+    // On vérifie si l'adresse courante est dans LmcDebugger::prt et
+    // on affiche sa valeur si c'est le cas.
+    if (lmc_hal.dbg.prt // on ne veut pas de l'adresse 0
+        && lmc_hal.dbg.prt == lmc_hal.cu.pc)
+        lmc_dump(lmc_hal.cu.pc, lmc_hal.cu.pc);
+
+    // On vérifie que le debugger n'est pas en phase "continue", et
+    // donc on saute toutes les adresses sauf celle de
+    // LmcDebugger::brk ("break").
+    if (lmc_hal.dbg.opcode == CONT
+        && lmc_hal.dbg.brk // on ne veut pas s'arrêter à l'adresse 0
+        && lmc_hal.cu.pc != lmc_hal.dbg.brk)
+        return false;
+
+    return true;
+}
+
+static void lmc_dbg_phaseTwo(void)
+{
+    // On modifie le prompt pour afficher les valeurs de PC et ACC.
+    char prompt[BUFSIZ] = {0};
+    sprintf(prompt, LMC_DBGPROMPT);
+    lmc_hal.bus.prompt = prompt;
+
+    // On récupère les codes d'opération et d'argument pour la phase
+    // du debugger. On peut se permettre ici d'écraser l'opcode, car
+    // la phase de debug est située en amont de la phase 1 de
+    // l'ordinateur.
+    lmc_busInput(), lmc_hal.alu.opcode   = lmc_hal.bus.buffer;
+    lmc_busInput(), lmc_hal.mem.cache.wr = lmc_hal.bus.buffer;
+
+    // On rétablit le prompt originel au cas où la commande arrête la
+    // phase de debug.
+    lmc_hal.bus.prompt = LMC_PROMPT;
+}
+
+static bool lmc_dbg_phaseThree(void) { return lmc_phaseTwo(true); }
+
 static void lmc_dump(LmcRam start, LmcRam end)
 {
-#ifdef DEBUG
-    usleep(0.1*1000*1000);
     for (int addr = start; addr <= end && addr < LMC_MAXRAM; ++addr)
     {
         lmc_rwMemory(addr, &lmc_hal.mem.cache.wr, 'r');
@@ -334,10 +459,6 @@ static void lmc_dump(LmcRam start, LmcRam end)
         }
         lmc_busOutput(LMC_WRDVAL);
     }
-#else
-    (void) start;
-    (void) end;
-#endif // DEBUG
 }
 
 // clang-format off
@@ -355,7 +476,7 @@ static void lmc_phaseOne(void) {
 #endif
 }
 
-static bool lmc_phaseTwo(void)
+static bool lmc_phaseTwo(bool debug)
 {
     // On sépare le code indiquant où chercher l'opérande de
     // celui de l'opération.
@@ -365,11 +486,18 @@ static bool lmc_phaseTwo(void)
     // On modifie le code opératoire au besoin.
     lmc_opcalc(operation);
 
+    // Si le debugger lance une phase 2, aller chercher la valeur de
+    // l'argument dans l'adresse courante de PC va écraser l'argument
+    // donné via le debugger. On modifie donc la phase 2 pour éviter
+    // cet écrasement.
+    if (debug) { lmc_hal.mem.cache.sr = lmc_hal.mem.cache.wr; }
+    else {
 #ifdef _UCODES
     lmc_ucode(PCTOSR);
 #else
     lmc_hal.mem.cache.sr = lmc_hal.cu.pc;
 #endif
+    }
     // On va chercher la valeur de l'opérande.
     lmc_indirection(value);
 
@@ -535,6 +663,18 @@ static bool lmc_operation(LmcRam operation)
     op_jump:    lmc_hal.cu.pc = lmc_hal.mem.cache.wr; return false;
     case HLT:   return (lmc_hal.on = false);
 #endif
+    // opérations de debuggage.
+    case DEBUG: return (lmc_hal.dbg.opcode = lmc_hal.mem.cache.wr);
+    case CONT:  lmc_hal.dbg.opcode = lmc_hal.mem.cache.wr; return false;
+    case NEXT:  break;
+    case BREAK: lmc_hal.dbg.brk = lmc_hal.mem.cache.wr; break;
+    case FREE:  lmc_hal.dbg.brk = 0; break;
+    case PRINT: lmc_hal.dbg.prt = lmc_hal.mem.cache.wr; break;
+    case CLEAR: lmc_hal.dbg.prt = 0; break;
+    case DUMP:
+        lmc_busInput();
+        lmc_dump(lmc_hal.mem.cache.wr, lmc_hal.bus.buffer);
+        break;
     default:
         // Pour _UCODES où la variable est inutilisée.
         (void) value;

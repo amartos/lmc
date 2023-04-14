@@ -31,6 +31,7 @@ typedef struct LmcArguments {
     size_t max;   /**< Taille max de LmcArguments::files. */
     char** files; /**< Les chemins de fichiers supplémentaires donnés en arguments. */
     char* source; /**< Le fichier source du programme. */
+    bool debug;   /**< Le drapeau indiquant d'allumer ou non le debugger. */
 } LmcArguments;
 
 /**
@@ -49,6 +50,7 @@ typedef enum LmcOptions {
     LICENSEOPT = 'w', /**< Afficher la licence. */
     VERSIONOPT = 'v', /**< Afficher la version. */
     COMPILEOPT = 'c', /**< Compile au lieu d'exécuter. */
+    DEBUGONOPT = 'd', /**< Allume le debugger. */
     MAXOPT = 0xff,    /**< Nombre maximal d'options. */
 } LmcOptions;
 
@@ -94,6 +96,7 @@ static LmcDoc lmc_doc = {
         { .name = "license", .group = -1, .arg = NULL, .key = LICENSEOPT, .doc = "Affiche la licence" },
         { .name = "version", .group = -1, .arg = NULL, .key = VERSIONOPT, .doc = "Affiche la version" },
         { .name = "compile", .group = 1, .arg = "source", .key = COMPILEOPT, .doc = "Compile une source vers FICHIER" },
+        { .name = "debug",   .group = 1, .arg = NULL,     .key = DEBUGONOPT, .doc = "Allume le debugger" },
         { .name = NULL, .group = 0, .arg = NULL, .key = 0, .doc = NULL },
     },
     .help =
@@ -175,8 +178,9 @@ int main(int argc, char** argv)
     // lui donne les programmes. Si aucun fichier n'est donné, on
     // entre en mode interactif et l'utilisateur pourra taper des
     // commandes via le prompt.
+    LmcExec execfunc = cmdargs.debug ? lmc_shell : lmc_dbgShell;
     for (size_t i = 0; i < cmdargs.max && i <= cmdargs.cur && !status; ++i)
-        status = lmc_shell(cmdargs.files[i]);
+        status = execfunc(cmdargs.files[i]);
 
     // Le code de status est celui du dernier programme exécuté.
     return status;
@@ -194,6 +198,7 @@ static error_t lmc_parseOpts(int key, char* arg, struct argp_state* state)
         cmdargs.files[++cmdargs.cur] = arg;
         break;
     case COMPILEOPT: cmdargs.source = arg; break;
+    case DEBUGONOPT: cmdargs.debug = true; break;
     case ARGP_KEY_END: break;
     default: return ARGP_ERR_UNKNOWN;
     }

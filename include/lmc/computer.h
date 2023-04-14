@@ -83,6 +83,16 @@ typedef struct LmcBus {
     LmcRam buffer;      /**< Un buffer entre les E/S et la mémoire. */
 } LmcBus;
 
+/**
+ * @struct LmcDebugger
+ * @since 0.1.0
+ * @brief Structure du debugger.
+ */
+typedef struct LmcDebugger {
+    LmcRam brk;    /**< Adresse d'arrêt (break). */
+    LmcRam prt;    /**< Adresse dont il faut afficher la valeur. */
+    LmcRam opcode; /**< Opération courante du debugger. */
+} LmcDebugger;
 
 /**
  * @struct LmcComputer
@@ -94,6 +104,7 @@ typedef struct LmcComputer {
     LmcControlUnit cu; /**< L'unité de contrôle. */
     LmcLogicUnit alu;  /**< L'unité arthmétique et logique. */
     LmcBus bus;        /**< Le bus de communication avec le monde extérieur. */
+    LmcDebugger dbg;   /**< Le debugger. */
     bool on;           /**< Drapeau indiquant si l'ordinateur est allumé. */
 } LmcComputer;
 
@@ -103,17 +114,30 @@ typedef struct LmcComputer {
  * @}
  * @name Fonctions de l'ordinateur
  * @{
+ * @param filepath Le chemin d'un fichier compilé à exécuter, ou NULL
+ * pour entrer en mode de programmation interactive.
+ * @return La valeur du registre mot à l'extinction.
  ******************************************************************************/
 // clang-format on
 
 /**
+ * @typedef LmcExec
  * @since 0.1.0
- * @brief Exécute un programme.
- * @param filepath Le chemin d'un fichier compilé à exécuter, ou NULL
- * pour entrer en mode de programmation interactive.
- * @return La valeur du registre mot à l'extinction.
+ * @brief Type des fonctions d'exécution de l'ordinateur.
+ */
+typedef LmcRam (*LmcExec)(const char* filepath);
+
+/**
+ * @since 0.1.0
+ * @brief Exécute un programme sans le debugger.
  */
 LmcRam lmc_shell(const char* restrict filepath);
+
+/**
+ * @since 0.1.0
+ * @brief Exécute un programme avec le debugger.
+ */
+LmcRam lmc_dbgShell(const char* restrict filepath);
 
 // clang-format off
 /******************************************************************************

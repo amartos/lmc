@@ -104,6 +104,19 @@ typedef enum __attribute__((__packed__)) LmcOpCodes {
     BRN   = JMP | INV,  /**< Saute si l'accumulateur est négatif. */
     BRZ   = JMP | NOT,  /**< Saute si l'accumulateur est nul.*/
     START = PTR,        /**< Indique une adresse de démarrage. */
+
+    // Instructions spécifiques au debugger.
+    DEBUG = HLT   | INV, /**< Allumer/éteindre le debugger (selon l'argument). */
+    DUMP  = DEBUG | NOT, /**< Afficher toute la mémoire entre deux adresses. */
+    BREAK = DEBUG | WRT, /**< Enregistrer un point d'arrêt. */
+    FREE  = BREAK | NOT, /**< Libérer un point d'arrêt. */
+    CONT  = DEBUG | JMP, /**< Continuer jusqu'au prochain point d'arrêt. */
+    NEXT  = CONT  | NOT, /**< Exécuter la prochaine instruction et s'arrêter. */
+    // PRINT utilise ADD et non OUT car la valeur OUT vaut "0|INV", ce
+    // qui signifierait que PRINT équivaudrait à DEBUG... ce qui
+    // poserait un problème.
+    PRINT = DEBUG | ADD, /**< Afficher le contenu d'une adresse à chaque étape. */
+    CLEAR = PRINT | NOT, /**< Arrêter d'afficher le contenu d'une adresse. */
 } LmcOpCodes;
 
 /**
@@ -125,7 +138,14 @@ typedef enum __attribute__((__packed__)) LmcOpCodes {
     macro(BRN,"brn")                            \
     macro(BRZ,"brz")                            \
     macro(HLT,"stop")                           \
-    macro(START,"start")
+    macro(START,"start")                        \
+    macro(DEBUG, "debug")                       \
+    macro(BREAK, "break")                       \
+    macro(FREE, "free")                         \
+    macro(CONT, "continue")                     \
+    macro(NEXT, "next")                         \
+    macro(PRINT, "print")                       \
+    macro(DUMP, "dump")
 
 // clang-format off
 /******************************************************************************
