@@ -559,12 +559,12 @@ static bool lmc_phaseTwo(void)
     // On modifie le code opératoire au besoin.
     lmc_opcalc(operation);
 
-    // On va chercher la valeur de l'opérande.
 #ifdef _UCODES
     lmc_ucode(PCTOSR);
 #else
     lmc_hal.mem.cache.sr = lmc_hal.cu.pc;
 #endif
+    // On va chercher la valeur de l'opérande.
     lmc_indirection(value);
 
     // On lance l'opération.
