@@ -18,7 +18,7 @@
 // clang-format off
 
 /******************************************************************************
- * @name Microcodes
+ * @name Gestion des microcodes.
  * @{
  ******************************************************************************/
 // clang-format on
@@ -78,7 +78,7 @@ static void lmc_ucode(LmcUcodes ucode);
 // clang-format off
 
 /******************************************************************************
- * @name Phases du cycle.
+ * @name Debugging
  * @{
  ******************************************************************************/
 // clang-format on
@@ -93,6 +93,15 @@ static void lmc_ucode(LmcUcodes ucode);
  * @param end L'adresse de fin.
  */
 static void lmc_dump(LmcRam start, LmcRam end);
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ * @name Phases du cycle.
+ * @{
+ ******************************************************************************/
+// clang-format on
 
 /**
  * @since 0.1.0
@@ -247,7 +256,7 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode) __attribute__
 
 /******************************************************************************
  * @}
- * L'ordinateur et son bootstrap.
+ * @name L'ordinateur et son bootstrap.
  * @{
  ******************************************************************************/
 
@@ -315,6 +324,13 @@ LmcRam lmc_shell(const char* restrict filepath)
     return lmc_hal.mem.cache.wr; // code de status du programme
 }
 
+// clang-format off
+
+/******************************************************************************
+ * Debugging
+ ******************************************************************************/
+// clang-format on
+
 static void lmc_dump(LmcRam start, LmcRam end)
 {
 #ifdef DEBUG
@@ -332,6 +348,13 @@ static void lmc_dump(LmcRam start, LmcRam end)
     (void) end;
 #endif // DEBUG
 }
+
+// clang-format off
+
+/******************************************************************************
+ * I/O
+ ******************************************************************************/
+// clang-format on
 
 static bool lmc_setInput(const char* restrict filepath)
 {
@@ -398,6 +421,12 @@ static int lmc_convert(const char* restrict number)
         : EXIT_SUCCESS;
 }
 
+// clang-format off
+
+/******************************************************************************
+ * Opérations
+ ******************************************************************************/
+// clang-format on
 
 static void lmc_calc(void)
 {
@@ -504,6 +533,13 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
     default: break;
     }
 }
+
+// clang-format off
+
+/******************************************************************************
+ * Phases de calcul.
+ ******************************************************************************/
+// clang-format on
 
 static void lmc_phaseOne(void) {
 #ifdef _UCODES
