@@ -512,9 +512,8 @@ static bool lmc_operation(LmcRam operation)
     case NAND:  lmc_ucode(DOCALC); break;
     case LOAD:  lmc_ucode(WRTOAC); break;
     case OUT:   lmc_useries(SVTOWR, WRTOOU, NULL); break;
-    case IN:    lmc_useries(WINPUT, INTOWR, NULL); goto op_write;
-    case STORE: lmc_ucode(ACTOWR);
-    op_write:   lmc_ucode(WRTOSV); break;
+    case IN:    lmc_useries(WINPUT, INTOWR, WRTOSV, NULL); break;
+    case STORE: lmc_useries(ACTOWR, WRTOSV, NULL); break;
     case JUMP:
     op_jump:    lmc_ucode(WRTOPC); return false;
     case HLT:   lmc_ucode(LMCHLT); return false;
@@ -527,10 +526,11 @@ static bool lmc_operation(LmcRam operation)
         break;
     case IN:
         lmc_busInput();
-        value = &lmc_hal.bus.buffer;
-        goto op_write;
-    case STORE: value = &lmc_hal.alu.acc; goto op_write;
-    op_write: lmc_rwMemory(lmc_hal.mem.cache.sr, value, 'w'); break;
+        lmc_rwMemory(lmc_hal.mem.cache.sr, &lmc_hal.bus.buffer, 'w');
+        break;
+    case STORE:
+        lmc_rwMemory(lmc_hal.mem.cache.sr, &lmc_hal.alu.acc, 'w');
+        break;
     case JUMP:
     op_jump:    lmc_hal.cu.pc = lmc_hal.mem.cache.wr; return false;
     case HLT:   return (lmc_hal.on = false);
