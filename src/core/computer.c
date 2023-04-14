@@ -174,14 +174,7 @@ static int lmc_convert(const char* restrict number) __attribute__((nonnull));
  * @param fmt Une chaîne de formatage type printf.
  * @param ... Les arguments de la chaîne de formatage.
  */
-#define lmc_busPrint(fmt, ...) fprintf(lmc_hal.bus.output, fmt, ##__VA_ARGS__)
-
-/**
- * @since 0.1.0
- * @brief Affiche la valeur de LmcComputer::mem::cache::wr sur
- * LmcComputer::bus::output.
- */
-static void lmc_busOutput(void);
+#define lmc_busOutput(fmt, ...) fprintf(lmc_hal.bus.output, fmt, ##__VA_ARGS__)
 
 // clang-format off
 
@@ -328,10 +321,9 @@ static void lmc_dump(LmcRam start, LmcRam end)
     {
         lmc_rwMemory(addr, &lmc_hal.mem.cache.wr, 'r');
         if (!(addr & LMC_MEMCOL) || start == end) {
-            lmc_hal.bus.newline = true;
-            lmc_busPrint(LMC_HEXFMT ": ", LMC_MAXDIGITS, addr);
+            lmc_busOutput("\n" LMC_HEXFMT ": ", LMC_MAXDIGITS, addr);
         }
-        lmc_busOutput();
+        lmc_busOutput(LMC_WRDVAL);
     }
 #else
     (void) start;
@@ -404,14 +396,6 @@ static int lmc_convert(const char* restrict number)
         : EXIT_SUCCESS;
 }
 
-static void lmc_busOutput(void)
-{
-    if (lmc_hal.bus.newline) {
-        lmc_busPrint("\n");
-        lmc_hal.bus.newline = false;
-    }
-    lmc_busPrint(LMC_WRDVAL);
-}
 
 static void lmc_calc(void)
 {
@@ -482,7 +466,7 @@ static bool lmc_operation(LmcRam operation)
     case LOAD:  lmc_hal.alu.acc = lmc_hal.mem.cache.wr; break;
     case OUT:
         lmc_rwMemory(lmc_hal.mem.cache.sr, &lmc_hal.mem.cache.wr, 'r');
-        lmc_busOutput();
+        lmc_busOutput(LMC_WRDVAL);
         break;
     case IN:
         lmc_busInput();
@@ -601,7 +585,7 @@ static void lmc_ucode(LmcUcodes ucode)
     case WRTOAD: lmc_hal.cu.ir.ad = lmc_hal.mem.cache.wr; break;   // 6
     case ADTOSR: lmc_hal.mem.cache.sr = lmc_hal.cu.ir.ad; break;   // 7
     case INTOWR: lmc_hal.mem.cache.wr = lmc_hal.bus.buffer; break; // 8
-    case WRTOOU: lmc_busOutput(); break;                              // 9
+    case WRTOOU: lmc_busOutput(LMC_WRDVAL); break;                    // 9
     case ADDOPD: lmc_hal.alu.opcode = ADD; break;                     // 10
     case SUBOPD: lmc_hal.alu.opcode = SUB; break;                     // 11
     case DOCALC: lmc_calc(); break;                                   // 12
