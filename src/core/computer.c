@@ -13,68 +13,6 @@
 
 #include "lmc/computer.h"
 
-#ifdef _UCODES
-
-// clang-format off
-
-/******************************************************************************
- * @name Gestion des microcodes.
- * @{
- ******************************************************************************/
-// clang-format on
-
-/**
- * @enum LmcUcodes
- * @since 0.1.0
- * @brief Les microcodes.
- */
-typedef enum __attribute__ ((__packed__)) LmcUcodes {
-    PCTOSR = 1, /**< 1 Écrit la valeur du *program counter* dans le registre de sélection. */
-    WRTOPC,     /**< 2 Écrit le contenu du registre mot dans *program counter*. */
-    WRTOAC,     /**< 3 Écrit le contenu du registre mot dans l'accumulateur. */
-    ACTOWR,     /**< 4 Écrit le contenu de l'accumulateur dans le registre mot.  */
-    WRTOOP,     /**< 5 Écrit le contenu du registre mot dans le registre de code opératoire
-                 * de l'unité arithmétique et logique (UAL). */
-    WRTOAD,     /**< 6 Écrit le contenu du registre mot dans le regitre d'adresse. */
-    ADTOSR,     /**< 7 Écrit le contenu du registre d'adresse dans le registre de sélection. */
-    INTOWR,     /**< 8 Écrit le contenu du tampon d'entrée du bus dans le registre mot. */
-    WRTOOU,     /**< 9 Écrit le contenu du registre mot sur le tampon d'ouput du bus. */
-    ADDOPD,     /**< 10 Écrit la valeur ADD dans le registre de code opératoire de l'UAL. */
-    SUBOPD,     /**< 11 Écrit la valeur SUB dans le registre de code opératoire de l'UAL. */
-    DOCALC,     /**< 12 Effectue l'opération inscrite dans le registre de code opératoire de
-                 * l'UAL. */
-    SVTOWR,     /**< 13 Écrit la valeur stockée à l'adresse située dans le registre de
-                 * sélection dans le registre mot. */
-    WRTOSV,     /**< 14 Écrit la valeur du registre mot dans l'emplacement dont l'adresse est
-                 * située dans le registre de sélection. */
-    INCRPC,     /**< 15 Incrémente le *program counter*. */
-    WINPUT,     /**< 16 Attend une entrée de l'utilisateur. */
-    NANDOP,     /**< 17 Écrit la valeur NAND dans le registre de code opératoire de l'UAL. */
-    LMCHLT,     /**< 18 Ajout personnel: éteint l'ordinateur. */
-} LmcUcodes;
-
-/**
- * @since 0.1.0
- * @brief Effectue une série d'opérations de microcodes.
- * @attention La valeur @c NULL est utilisée comme sentinelle de la
- * fonction (elle doit obligatoirement être la dernière donnée en
- * arguments).
- * @param ucode Un microcode.
- * @param ... Le reste des microcodes, avec un NULL en dernière
- * position.
- */
-static void lmc_useries(unsigned int ucode, ...) __attribute__((sentinel));
-
-/**
- * @since 0.1.0
- * @brief Effectue une opération de microcode.
- * @param ucode Le code de l'opération à effectuer.
- */
-static void lmc_ucode(LmcUcodes ucode);
-/** @} */
-
-#endif // _UCODES
-
 // clang-format off
 
 /******************************************************************************
@@ -242,6 +180,68 @@ static void lmc_calc(void);
  * pour y écrire.
  */
 static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode) __attribute__((nonnull (2)));
+
+#ifdef _UCODES
+
+// clang-format off
+
+/******************************************************************************
+ * @}
+ * @name Gestion des microcodes.
+ * @{
+ ******************************************************************************/
+// clang-format on
+
+/**
+ * @enum LmcUcodes
+ * @since 0.1.0
+ * @brief Les microcodes.
+ */
+typedef enum __attribute__ ((__packed__)) LmcUcodes {
+    PCTOSR = 1, /**< 1 Écrit la valeur du *program counter* dans le registre de sélection. */
+    WRTOPC,     /**< 2 Écrit le contenu du registre mot dans *program counter*. */
+    WRTOAC,     /**< 3 Écrit le contenu du registre mot dans l'accumulateur. */
+    ACTOWR,     /**< 4 Écrit le contenu de l'accumulateur dans le registre mot.  */
+    WRTOOP,     /**< 5 Écrit le contenu du registre mot dans le registre de code opératoire
+                 * de l'unité arithmétique et logique (UAL). */
+    WRTOAD,     /**< 6 Écrit le contenu du registre mot dans le regitre d'adresse. */
+    ADTOSR,     /**< 7 Écrit le contenu du registre d'adresse dans le registre de sélection. */
+    INTOWR,     /**< 8 Écrit le contenu du tampon d'entrée du bus dans le registre mot. */
+    WRTOOU,     /**< 9 Écrit le contenu du registre mot sur le tampon d'ouput du bus. */
+    ADDOPD,     /**< 10 Écrit la valeur ADD dans le registre de code opératoire de l'UAL. */
+    SUBOPD,     /**< 11 Écrit la valeur SUB dans le registre de code opératoire de l'UAL. */
+    DOCALC,     /**< 12 Effectue l'opération inscrite dans le registre de code opératoire de
+                 * l'UAL. */
+    SVTOWR,     /**< 13 Écrit la valeur stockée à l'adresse située dans le registre de
+                 * sélection dans le registre mot. */
+    WRTOSV,     /**< 14 Écrit la valeur du registre mot dans l'emplacement dont l'adresse est
+                 * située dans le registre de sélection. */
+    INCRPC,     /**< 15 Incrémente le *program counter*. */
+    WINPUT,     /**< 16 Attend une entrée de l'utilisateur. */
+    NANDOP,     /**< 17 Écrit la valeur NAND dans le registre de code opératoire de l'UAL. */
+    LMCHLT,     /**< 18 Ajout personnel: éteint l'ordinateur. */
+} LmcUcodes;
+
+/**
+ * @since 0.1.0
+ * @brief Effectue une série d'opérations de microcodes.
+ * @attention La valeur @c NULL est utilisée comme sentinelle de la
+ * fonction (elle doit obligatoirement être la dernière donnée en
+ * arguments).
+ * @param ucode Un microcode.
+ * @param ... Le reste des microcodes, avec un NULL en dernière
+ * position.
+ */
+static void lmc_useries(unsigned int ucode, ...) __attribute__((sentinel));
+
+/**
+ * @since 0.1.0
+ * @brief Effectue une opération de microcode.
+ * @param ucode Le code de l'opération à effectuer.
+ */
+static void lmc_ucode(LmcUcodes ucode);
+
+#endif // _UCODES
 
 // clang-format off
 
