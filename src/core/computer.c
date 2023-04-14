@@ -127,7 +127,7 @@ static void lmc_phaseThree(void);
 
 /******************************************************************************
  * @}
- * @name Fonction de gestion du bus.
+ * @name Gestion de l'I/O.
  *
  * Les fonctions de ce groupe sont liées à l'interaction de LmcBus
  * avec l'ordinateur et le monde extérieur.
@@ -189,18 +189,10 @@ static int lmc_convert(const char* restrict number) __attribute__((nonnull));
 
 /******************************************************************************
  * @}
- * @name Fonctions d'opérations.
+ * @name Opérations.
  * @{
  ******************************************************************************/
 // clang-format on
-
-/**
- * @since 0.1.0
- * @brief Effectue l'opération d'arithmétique décrite par
- * LmcComputer::alu::opcode avec les opérandes
- * LmcComputer::mem::cache::wr et LmcComputer::alu:acc.
- */
-static void lmc_calc(void);
 
 /**
  * since 0.1.0
@@ -226,14 +218,13 @@ static void lmc_indirection(LmcRam type);
  */
 static bool lmc_operation(LmcRam operation);
 
-// clang-format off
-
-/******************************************************************************
- * @}
- * @name Fonctions de gestion de la mémoire.
- * @{
- ******************************************************************************/
-// clang-format on
+/**
+ * @since 0.1.0
+ * @brief Effectue l'opération d'arithmétique décrite par
+ * LmcComputer::alu::opcode avec les opérandes
+ * LmcComputer::mem::cache::wr et LmcComputer::alu:acc.
+ */
+static void lmc_calc(void);
 
 /**
  * @since 0.1.0
@@ -352,7 +343,52 @@ static void lmc_dump(LmcRam start, LmcRam end)
 // clang-format off
 
 /******************************************************************************
- * I/O
+ * Phases du cycle.
+ ******************************************************************************/
+// clang-format on
+
+static void lmc_phaseOne(void) {
+#ifdef _UCODES
+    lmc_useries(PCTOSR, SVTOWR, WRTOOP, INCRPC, NULL);
+#else
+    lmc_rwMemory(lmc_hal.cu.pc++, &lmc_hal.alu.opcode, 'r');
+#endif
+}
+
+static bool lmc_phaseTwo(void)
+{
+    // On sépare le code indiquant où chercher l'opérande de
+    // celui de l'opération.
+    LmcRam operation = lmc_hal.alu.opcode & ~(INDIR);
+    LmcRam value     = lmc_hal.alu.opcode & INDIR;
+
+    // On modifie le code opératoire au besoin.
+    lmc_opcalc(operation);
+
+#ifdef _UCODES
+    lmc_ucode(PCTOSR);
+#else
+    lmc_hal.mem.cache.sr = lmc_hal.cu.pc;
+#endif
+    // On va chercher la valeur de l'opérande.
+    lmc_indirection(value);
+
+    // On lance l'opération.
+    return lmc_operation(operation);
+}
+
+static void lmc_phaseThree(void) {
+#ifdef _UCODES
+    lmc_ucode(INCRPC);
+#else
+    ++lmc_hal.cu.pc;
+#endif
+}
+
+// clang-format off
+
+/******************************************************************************
+ * Gestion de l'I/O
  ******************************************************************************/
 // clang-format on
 
@@ -427,16 +463,6 @@ static int lmc_convert(const char* restrict number)
  * Opérations
  ******************************************************************************/
 // clang-format on
-
-static void lmc_calc(void)
-{
-    switch(lmc_hal.alu.opcode) {
-    case ADD:  lmc_hal.alu.acc += lmc_hal.mem.cache.wr; break;
-    case SUB:  lmc_hal.alu.acc -= lmc_hal.mem.cache.wr; break;
-    case NAND: lmc_hal.alu.acc = !(lmc_hal.alu.acc && lmc_hal.mem.cache.wr); break;
-    default: break;
-    }
-}
 
 static void lmc_opcalc(LmcRam operation)
 {
@@ -517,6 +543,16 @@ static bool lmc_operation(LmcRam operation)
     return true;
 }
 
+static void lmc_calc(void)
+{
+    switch(lmc_hal.alu.opcode) {
+    case ADD:  lmc_hal.alu.acc += lmc_hal.mem.cache.wr; break;
+    case SUB:  lmc_hal.alu.acc -= lmc_hal.mem.cache.wr; break;
+    case NAND: lmc_hal.alu.acc = !(lmc_hal.alu.acc && lmc_hal.mem.cache.wr); break;
+    default: break;
+    }
+}
+
 static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
 {
     switch (mode) {
@@ -534,57 +570,12 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
     }
 }
 
-// clang-format off
-
-/******************************************************************************
- * Phases de calcul.
- ******************************************************************************/
-// clang-format on
-
-static void lmc_phaseOne(void) {
-#ifdef _UCODES
-    lmc_useries(PCTOSR, SVTOWR, WRTOOP, INCRPC, NULL);
-#else
-    lmc_rwMemory(lmc_hal.cu.pc++, &lmc_hal.alu.opcode, 'r');
-#endif
-}
-
-static bool lmc_phaseTwo(void)
-{
-    // On sépare le code indiquant où chercher l'opérande de
-    // celui de l'opération.
-    LmcRam operation = lmc_hal.alu.opcode & ~(INDIR);
-    LmcRam value     = lmc_hal.alu.opcode & INDIR;
-
-    // On modifie le code opératoire au besoin.
-    lmc_opcalc(operation);
-
-#ifdef _UCODES
-    lmc_ucode(PCTOSR);
-#else
-    lmc_hal.mem.cache.sr = lmc_hal.cu.pc;
-#endif
-    // On va chercher la valeur de l'opérande.
-    lmc_indirection(value);
-
-    // On lance l'opération.
-    return lmc_operation(operation);
-}
-
-static void lmc_phaseThree(void) {
-#ifdef _UCODES
-    lmc_ucode(INCRPC);
-#else
-    ++lmc_hal.cu.pc;
-#endif
-}
-
 #ifdef _UCODES
 
 // clang-format off
 
 /******************************************************************************
- * Opérations avec microcodes.
+ * Gestion des microcodes
  ******************************************************************************/
 // clang-format on
 
