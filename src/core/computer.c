@@ -2,7 +2,7 @@
  * @file       computer.c
  * @version    0.1.0
  * @brief      Ordinateur en papier.
- * @year       2022
+ * @year       2023
  * @author     Alexandre Martos
  * @email      contact@amartos.fr
  * @copyright  GNU General Public License v3
