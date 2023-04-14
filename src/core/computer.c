@@ -556,8 +556,13 @@ static void lmc_calc(void)
 static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
 {
     switch (mode) {
+    // On ne vérifie pas les adresses en dehors de la RAM ici car
+    // LmcRam ne peut prendre de valeur en dehors. On est donc
+    // toujours assuré d'avoir une adresse "dans les clous" (ce
+    // qui ne veut pas dire correcte).
     case 'r': *value = lmc_hal.mem.ram[address]; break;
     case 'w':
+        // On simule une erreur d'écriture dans la ROM.
         if (address < LMC_MAXROM) {
             lmc_hal.on         = false;
             errno              = EFAULT;
