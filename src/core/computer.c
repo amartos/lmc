@@ -129,8 +129,8 @@ static void lmc_phaseThree(void);
  * @}
  * @name Gestion de l'I/O.
  *
- * Les fonctions de ce groupe sont liées à l'interaction de LmcBus
- * avec l'ordinateur et le monde extérieur.
+ * Les fonctions et structures de ce groupe sont liées à l'interaction
+ * de LmcBus avec l'ordinateur et le monde extérieur.
  * @{
  ******************************************************************************/
 // clang-format on
