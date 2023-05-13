@@ -25,40 +25,16 @@
  ******************************************************************************/
 // clang-format on
 
-static LmcMockTrigger trigger = {0};
+static const char* bootstrap = NULL;
+static const char* file = NULL;
 
-void sccroll_before(void) { trigger.errnum = 0, trigger.delay = 0; }
+void sccroll_before(void) { bootstrap = NULL, file = NULL; }
 
-SCCROLL_MOCK(FILE*, fopen, const char* restrict pathname, const char* restrict mode)
-{ return lmc_mockErr(fopen, ERRFOPEN, NULL, pathname, mode); }
-
-SCCROLL_MOCK(int, ferror, FILE* stream)
+void test_lmc_shell(void)
 {
-    // Ce simulacre est nécessaire pour le déclenchement d'erreur de
-    // fscanf et fread (puisque l'on analyse l'erreur de stream avec
-    // ferror).
-    return trigger.errnum ? 1 : __real_ferror(stream);
+    int status = lmc_shell(bootstrap, file);
+    if (!sccroll_mockGetTrigger()) assert(status == 0);
 }
-
-// BUG: __wrap_fscanf n'est pas appelé, il ne peut donc être défini
-// comme simulacre. Peut-être à cause du côté variadique de la
-// fonction?
-int fscanf(FILE* restrict stream, const char* restrict format, ...)
-{
-    // puisque l'on ne peut pas vraiment passer les paramètres
-    // variables directement à fscanf, ont utilise vfscanf comme
-    // __real_fscanf. Le code source original de fscanf fait la même
-    // chose.
-    // TODO: rajouter référence code source
-    va_list ap;
-    va_start(ap, format);
-    int status = vfscanf(stream, format, ap);
-    va_end(ap);
-    return trigger.errnum == ERRFSCANF && !trigger.delay-- ? EOF : status;
-}
-
-SCCROLL_MOCK(size_t, fread, void* ptr, size_t size, size_t nmemb, FILE* restrict stream)
-{ return lmc_mockErr(fread, ERRFREAD, 0, ptr, size, nmemb, stream); }
 
 // clang-format off
 
@@ -79,7 +55,40 @@ SCCROLL_TEST(
         },
      }
 )
-{ assert(!lmc_shell(BOOTSTRAP, CMDLINE)); }
+{
+    bootstrap = BOOTSTRAP;
+    file = CMDLINE;
+    test_lmc_shell();
+}
+
+SCCROLL_TEST(
+    manual_prog_errors_handling,
+    .std = {
+        [STDIN_FILENO]  = { .content.blob =
+            // On s'assure d'avoir assez de matière pour tous les
+            // tests.
+            MANUALIN MANUALIN MANUALIN MANUALIN
+            MANUALIN MANUALIN MANUALIN MANUALIN
+            MANUALIN MANUALIN MANUALIN MANUALIN
+            MANUALIN MANUALIN MANUALIN MANUALIN
+            MANUALIN MANUALIN MANUALIN MANUALIN
+            MANUALIN MANUALIN MANUALIN MANUALIN
+            MANUALIN MANUALIN MANUALIN MANUALIN
+            MANUALIN MANUALIN MANUALIN MANUALIN
+        },
+        [STDOUT_FILENO] = { .content.blob =
+            MANUALOUT "422301"
+            "? >? >? >? >? >? >? >? >"
+            "? >? >? >? >? >? >? >? >"
+            "? >? >"
+        },
+     }
+)
+{
+    bootstrap = BOOTSTRAP;
+    file = CMDLINE;
+    sccroll_mockPredefined(test_lmc_shell);
+}
 
 SCCROLL_TEST(
     file_prog,
@@ -101,10 +110,13 @@ SCCROLL_TEST(
     }
 )
 {
-    assert(!lmc_shell(BOOTSTRAP, PRODUCT));
-    assert(!lmc_shell(BOOTSTRAP, PRODUCT));
-    assert(!lmc_shell(BOOTSTRAP, QUOTIENT));
-    assert(!lmc_shell(BOOTSTRAP, QUOTIENT));
+    bootstrap = BOOTSTRAP;
+    file = PRODUCT;
+    test_lmc_shell();
+    test_lmc_shell();
+    file = QUOTIENT;
+    test_lmc_shell();
+    test_lmc_shell();
 }
 
 SCCROLL_TEST(
@@ -115,6 +127,37 @@ SCCROLL_TEST(
     }
 )
 { assert(lmc_shell(BOOTSTRAP, QUOTIENT) == 1); }
+
+SCCROLL_TEST(
+    file_prog_errors_handling,
+    .std = {
+        [STDIN_FILENO]  = { .content.blob =
+            // operation = résultat (base 16)
+            "03\n08\n" // 3*8 = 18
+            "07\n07\n" // 7*7 = 31
+            "0f\n03\n" // f/3 = 5
+            "09\n04\n" // 9/4 = 2
+            "ff\n00\n" // ff/0 = error
+        },
+        [STDOUT_FILENO] = { .content.blob =
+            "? >? >18"
+            "? >? >"
+            "? >? >"
+            "? >? >"
+            "? >? >"
+            "? >? >"
+            "? >? >"
+            "? >? >"
+            "? >? >"
+            "? >? >"
+        }
+    }
+)
+{
+    bootstrap = BOOTSTRAP;
+    file = PRODUCT;
+    sccroll_mockPredefined(test_lmc_shell);
+}
 
 SCCROLL_TEST(
     cmdline_eof,
@@ -133,15 +176,6 @@ SCCROLL_TEST(
     }
 )
 { assert(lmc_shell(BOOTSTRAP, UNDEFINED)); }
-
-SCCROLL_TEST(
-    fopen_errors_handling,
-    .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
-    .std = {
-        [STDERR_FILENO] = { .content.blob = "computer: " PRODUCT ": Success\n" },
-     }
-)
-{ trigger.errnum = ERRFOPEN, lmc_shell(BOOTSTRAP, PRODUCT); }
 
 SCCROLL_TEST(
     rom_error,
@@ -187,48 +221,6 @@ SCCROLL_TEST(
      }
 )
 { assert(!lmc_shell(BOOTSTRAP, CMDLINE)); }
-
-SCCROLL_TEST(
-    fscanf_errors_handling,
-    .std = {
-        [STDIN_FILENO]  = { .content.blob =
-            // L'erreur ici est provoquée à la première lecture de
-            // fscanf, et donc l'adresse de départ sera différente.
-            "50\n"
-            "25\n04\n"
-            "41\n20\n" // out @ 20 (adresse après le jump du bootstrap)
-            "04\n00\n" // stop 00
-        },
-        [STDOUT_FILENO] = { .content.blob =
-            "? >"
-            "? >? >"
-            "? >? >"
-            "? >? >"
-            "25"
-        },
-        [STDERR_FILENO] = { .content.blob = "computer: Success" },
-     }
-)
-{ trigger.errnum = ERRFSCANF, assert(!lmc_shell(BOOTSTRAP, CMDLINE)); }
-
-SCCROLL_TEST(
-    fread_errors_handling,
-    .std = {
-        [STDIN_FILENO]  = { .content.blob =
-            "30\n04\n"
-            "01\n73\n" // out 73
-            "04\n00\n" // stop 00
-        },
-        [STDOUT_FILENO] = { .content.blob =
-            "? >? >"
-            "? >? >"
-            "? >? >"
-            "73"
-        },
-        [STDERR_FILENO] = { .content.blob = "computer: Success" },
-     }
-)
-{ trigger.errnum = ERRFREAD, assert(!lmc_shell(BOOTSTRAP, PRODUCT)); }
 
 SCCROLL_TEST(
     chbootstrap,
