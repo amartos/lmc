@@ -94,6 +94,9 @@ void test_prep(void)
     program_files[dummycode].size = sizeof(char)*DUMMYCODELEN;
 }
 
+// Wrapper pour tests de gestion d'erreurs.
+void lmc_compile_errtests(void) { lmc_compile(PRODUCT LMC_EXT, NULL); }
+
 // Nettoyage du module.
 void sccroll_clean(void)
 {
@@ -103,20 +106,6 @@ void sccroll_clean(void)
         free(program_files[i].temp);
     }
 }
-
-// Simulacres et leur gestion pour les tests d'erreurs.
-static LmcMockTrigger trigger = {0};
-
-void sccroll_before(void) { trigger.errnum = 0, trigger.delay = 0; }
-
-SCCROLL_MOCK(FILE*, fopen, const char* restrict pathname, const char* restrict mode)
-{ return lmc_mockErr(fopen, ERRFOPEN, NULL, pathname, mode); }
-
-SCCROLL_MOCK(int, ferror, FILE* stream)
-{ return trigger.errnum && trigger.delay == -1 ? 1 : __real_ferror(stream); }
-
-SCCROLL_MOCK(size_t, fwrite, const void* ptr, size_t size, size_t nmemb, FILE* restrict stream)
-{ return lmc_mockErr(fwrite, ERRFWRITE, 0, ptr, size, nmemb, stream); }
 
 // clang-format off
 
@@ -155,33 +144,29 @@ SCCROLL_TEST(
 { assert(lmc_compile(MALFORMED LMC_EXT, NULL)); }
 
 SCCROLL_TEST(
-    fopen_errors_handling_nodelay,
-    .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
+    errors_handling,
     .std = {
-        [STDERR_FILENO] = { .content.blob = "compiler: " PRODUCT LMC_EXT ": Success", }
-    }
+        [STDOUT_FILENO] = { .content.blob =
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+            "LMC: compiled to '" LMC_BIN "'\n"
+        },
+    },
 )
-{ trigger.errnum = ERRFOPEN, lmc_compile(PRODUCT LMC_EXT, NULL); }
-
-SCCROLL_TEST(
-    fopen_errors_handling_delayone,
-    .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
-    .std = {
-        [STDERR_FILENO] = { .content.blob = "compiler: " LMC_BIN ": Success", }
-    }
-)
-{
-    trigger.errnum = ERRFOPEN, trigger.delay = 1;
-    lmc_compile(PRODUCT LMC_EXT, NULL);
-}
-
-SCCROLL_TEST(
-    fwrite_errors_handling,
-    .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
-    .std = {
-        [STDERR_FILENO] = { .content.blob =
-            "compiler: " LMC_BIN ": Success",
-        }
-    }
-)
-{ trigger.errnum = ERRFWRITE, lmc_compile(PRODUCT LMC_EXT, NULL); }
+{ sccroll_mockPredefined(lmc_compile_errtests); }
