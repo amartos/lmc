@@ -97,7 +97,6 @@ SCCROLL_TEST(
             "? >? >31"
             "? >? >05"
             "? >? >02"
-            "? >? >"
         }
     }
 )
@@ -106,8 +105,16 @@ SCCROLL_TEST(
     assert(!lmc_shell(BOOTSTRAP, PRODUCT));
     assert(!lmc_shell(BOOTSTRAP, QUOTIENT));
     assert(!lmc_shell(BOOTSTRAP, QUOTIENT));
-    assert(lmc_shell(BOOTSTRAP, QUOTIENT) == 1);
 }
+
+SCCROLL_TEST(
+    div_by_zero,
+    .std = {
+        [STDIN_FILENO]  = { .content.blob = "ff\n00\n" }, // ff/0 = error
+        [STDOUT_FILENO] = { .content.blob = "? >? >" },
+    }
+)
+{ assert(lmc_shell(BOOTSTRAP, QUOTIENT) == 1); }
 
 SCCROLL_TEST(
     cmdline_eof,
