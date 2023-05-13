@@ -29,6 +29,32 @@
 // Variable contenant du code traduit pour comparaison.
 LmcRamArray bytes = {0};
 
+// test de lmc_opcode
+void test_opcode(void)
+{
+    int i;
+    const char* keyword;
+    for (i = 0, keyword = lmc_keyword(i); i < LMC_MAXRAM; ++i, keyword = lmc_keyword(i))
+        if (!sccroll_mockGetTrigger())
+            assert((!*keyword) || (lmc_opcode((char*)keyword) == (LmcOpCodes)i));
+    if (!sccroll_mockGetTrigger()) assert(lmc_opcode("") == 0);
+}
+
+// test de lmc_append.
+void test_append(void)
+{
+    LmcRam values[10] = { 0 };
+    LmcRamArray array = { .values = values, .max = 10, };
+    lmc_append(&array, 42, 23);
+    if (!sccroll_mockGetTrigger())
+    {
+        assert(array.values[0] == 42);
+        assert(array.values[1] == 23);
+        assert(array.max == 10);
+        assert(array.current == 2);
+    }
+}
+
 // Callback vérifiant la traduction de code.
 __attribute__((nonnull (1)))
 void lmc_lexerCheckerCallback(LmcRamArray* array, LmcRam code, LmcRam value)
@@ -49,23 +75,13 @@ void lmc_lexerFatalCallback(LmcRamArray* array, LmcRam a, LmcRam b)
     err(EXIT_FAILURE, "callback called when it should not");
 }
 
-// Simulacres et leur gestion pour les tests d'erreurs.
-static LmcMockTrigger trigger = { 0 };
-
 void sccroll_before(void) {
-    trigger.errnum = 0, trigger.delay = 0;
     if (bytes.values) {
         free(bytes.values);
         bytes.max     = 0;
         bytes.current = 0;
     }
 }
-
-// On ne créé pas de simulacre de hcreate, ni de hsearch qui teste
-// lors de l'entrée d'un item, car ces actions sont faites avant
-// l'appel du main.
-SCCROLL_MOCK(ENTRY*, hsearch, ENTRY item, ACTION action)
-{ return lmc_mockErr(hsearch, ERRHSEARCH, NULL, item, action); }
 
 // clang-format off
 
@@ -75,31 +91,19 @@ SCCROLL_MOCK(ENTRY*, hsearch, ENTRY item, ACTION action)
 // clang-format on
 
 SCCROLL_TEST(translation)
-{
-    int i;
-    const char* keyword;
-    for (i = 0, keyword = lmc_keyword(i); i < LMC_MAXRAM; ++i, keyword = lmc_keyword(i))
-        assert((!*keyword) || (lmc_opcode((char*)keyword) == (LmcOpCodes)i));
-    assert(lmc_opcode("") == 0);
-}
+{ test_opcode(); }
+
+SCCROLL_TEST(translation_error_handling)
+{ sccroll_mockPredefined(test_opcode); }
 
 SCCROLL_TEST(
     notaword,
     .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
     .std = {
-        [STDERR_FILENO] = { .content.blob = "lexer: unknown item 'foobar': Success", }
+        [STDERR_FILENO] = { .content.blob = "lexer: unknown item 'foobar': No such process", }
     }
 )
-{ trigger.errnum = ERRHSEARCH, lmc_opcode("foobar"); }
-
-SCCROLL_TEST(
-    hsearch_find_errors_handling,
-    .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
-    .std = {
-        [STDERR_FILENO] = { .content.blob = "lexer: unknown item 'in': Success", }
-    }
-)
-{ trigger.errnum = ERRHSEARCH, lmc_opcode("in"); }
+{ lmc_opcode("foobar"); }
 
 SCCROLL_TEST(
     yyerror_output,
@@ -139,27 +143,7 @@ SCCROLL_TEST(analysis)
 }
 
 SCCROLL_TEST(append)
-{
-    LmcRam values[10] = { 0 };
-    LmcRamArray array = { .values = values, .max = 10, };
-    lmc_append(&array, 42, 23);
-    assert(array.values[0] == 42);
-    assert(array.values[1] == 23);
-    assert(array.max == 10);
-    assert(array.current == 2);
-}
+{ test_append(); }
 
-SCCROLL_TEST(
-    append_error,
-    .std = {
-        [STDERR_FILENO] = { .content.blob =
-            "lexer: memory array size insufficient at (2a,17): Cannot allocate memory",
-        }
-    }
-)
-{
-    LmcRam values[10] = { 0 };
-    LmcRamArray array = { .values = values, .max = 10, .current = 9, };
-    lmc_append(&array, 42, 23);
-    assertMsg(false, "Forbidden point reached");
-}
+SCCROLL_TEST(append_error)
+{ sccroll_mockPredefined(test_append); }
