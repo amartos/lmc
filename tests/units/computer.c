@@ -71,28 +71,10 @@ SCCROLL_TEST(
     manual_prog,
     .std = {
         [STDIN_FILENO]  = { .content.blob =
-            "30\n12\n"
-            "01\n42\n" // out 42
-            "01\n23\n" // out 23
-            "22\n00\n" // nand 0
-            "20\n01\n" // add 1
-            "22\n00\n" // nand 0
-            "22\n00\n" // nand 1
-            "48\n30\n" // store @ 30
-            "41\n30\n" // out @ 30
-            "04\n00\n" // stop 00,
+            MANUALIN
         },
         [STDOUT_FILENO] = { .content.blob =
-            "? >? >"
-            "? >? >"
-            "? >? >"
-            "? >? >"
-            "? >? >"
-            "? >? >"
-            "? >? >"
-            "? >? >"
-            "? >? >"
-            "? >? >"
+            MANUALOUT
             "422301"
         },
      }

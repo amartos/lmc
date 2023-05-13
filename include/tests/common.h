@@ -17,6 +17,54 @@
 #include <sccroll.h>
 
 /**
+ * @def MANUALIN
+ * @since 0.1.0
+ * @brief Programme de test entré via STDIN.
+ *
+ * Il y a un total de 20 instructions.
+ * La traduction des codes est la suivante:
+ * position 0x30, taille 0x12
+ * out     0x42
+ * out     0x23
+ * nand    0x00
+ * add     0x01
+ * nand    0x00
+ * nand    0x01
+ * store @ 0x30
+ * out   @ 0x30
+ * stop    0x00
+ */
+#define MANUALIN                                \
+    "30\n12\n"                                  \
+    "01\n42\n"                                  \
+    "01\n23\n"                                  \
+    "22\n00\n"                                  \
+    "20\n01\n"                                  \
+    "22\n00\n"                                  \
+    "22\n00\n"                                  \
+    "48\n30\n"                                  \
+    "41\n30\n"                                  \
+    "04\n00\n"
+
+/**
+ * @def MANUALOUT
+ * @since 0.1.0
+ * @brief Output prévu sur STDOUT pour la programmation en temps réel
+ * de #MANUALIN.
+ */
+#define MANUALOUT                               \
+    "? >? >"                                    \
+    "? >? >"                                    \
+    "? >? >"                                    \
+    "? >? >"                                    \
+    "? >? >"                                    \
+    "? >? >"                                    \
+    "? >? >"                                    \
+    "? >? >"                                    \
+    "? >? >"                                    \
+    "? >? >"
+
+/**
  * @name Chemins des programmes de tests pour l'ordinateur.
  * @{
  */
