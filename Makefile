@@ -26,7 +26,6 @@ ASSETS		:= $(TESTS)/assets
 TLOGS		:= $(ASSETS)/logs
 
 SCRIPTS		= scripts
-MOCKS		:= $(SCRIPTS)/mocks.awk
 INFO	 	:= $(SCRIPTS)/pinfo
 PDOC		:= $(SCRIPTS)/pdoc.awk
 
@@ -193,7 +192,7 @@ tests-no-ucodes: tests
 
 # @brief Exécute les tests du projet (unitaires, couverture, etc...)
 tests: CFLAGS += -g -O0 --coverage
-tests: LDLIBS += -L$(LIBS) -lsccroll $(shell $(MOCKS) $*.c) --coverage
+tests: LDLIBS += -L$(LIBS) -lsccroll -ldl --coverage
 tests: clean init $(UDEPS:%.c=$(LOGS)/%.difflog)
 	@$(COV) $(COVOPTS) $(COVOPTSXML) $(COVOPTSHTML) $(BUILD)
 	@find $(BUILD) \( -name "*.gcno" -or -name "*.gcda" -or -empty \) -delete
