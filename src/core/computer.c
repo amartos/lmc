@@ -485,7 +485,7 @@ static void lmc_dump(LmcRam start, LmcRam end)
         if (!(addr & LMC_MEMCOL) || start == end) {
             lmc_busOutput("\n" LMC_HEXFMT ": ", LMC_MAXDIGITS, addr);
         }
-        lmc_busOutput(LMC_WRDVAL);
+        lmc_busOutput(LMC_HEXFMT " ", LMC_MAXDIGITS, lmc_hal.mem.cache.wr);
     }
 }
 
