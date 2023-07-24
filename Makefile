@@ -121,39 +121,39 @@ PDF			:= $(LATEX)/refman.pdf
 ###############################################################################
 
 %.tab.c: %.y
-	@mkdir -p $(dir $@)
+	@mkdir -p $(@D)
 	@bison -d -o $@ $<
 
 %.yy.c: %.l
-	@mkdir -p $(dir $@)
+	@mkdir -p $(@D)
 	@flex -o $@ $<
 
 $(OBJS)/%.o: %.c
-	@mkdir -p $(dir $@) $(DEPS)/$(dir $*)
+	@mkdir -p $(@D) $(DEPS)/$(*D)
 	@$(CC) $(CFLAGS) $(DFLAGS) $(DEPS)/$*.d -c $< -o $@
 
 $(BIN)/%: $(OBJS)/%.o $(CDEPS:%.c=$(OBJS)/%.o)
-	@mkdir -p $(dir $@)
+	@mkdir -p $(@D)
 	@$(CC) $(LDLIBS) $^ -o $@
 
 $(LOGS)/%.log: $(BIN)/%
-	@mkdir -p $(dir $@)
+	@mkdir -p $(@D)
 	@LD_LIBRARY_PATH=$(LIBS):/usr/local/lib $< $(ARGS) &> $@ \
-		&& $(INFO) pass $(notdir $*) \
-		|| ($(INFO) fail $(notdir $*); true)
+		&& $(INFO) pass $(*F) \
+		|| ($(INFO) fail $(*F); true)
 
 # Cette recette ne devrait pas être souvent utilisée. Elle existe pour
 # le cas où l'on est en train de construire un test unitaire, et que
 # le premier log est inexistant.
 $(TLOGS)/%.log:
-	@mkdir -p $(dir $@)
+	@mkdir -p $(@D)
 	@touch $@
 
 $(LOGS)/%.difflog: $(TLOGS)/%.log $(LOGS)/%.log
-	@mkdir -p $(dir $@)
+	@mkdir -p $(@D)
 	@git diff --no-index $^ > $@ \
 		|| (sed -i "s+$(BUILD)+$(ASSETS)+g" $@ \
-			&& $(INFO) error $(notdir $* log); true)
+			&& $(INFO) error $(*F) log; true)
 	@rm $(BIN)/$* $(LOGS)/$*.log
 
 
