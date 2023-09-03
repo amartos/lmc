@@ -1,7 +1,0 @@
-;; Object LMC
-;; EDE Project Files are auto generated: Do Not Edit
-(ede-proj-project "LMC"
-  :file "Project.ede"
-  :name "LMC"
-  :targets nil
-  :object-name "LMC")
