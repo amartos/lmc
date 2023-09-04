@@ -28,6 +28,7 @@ TLOGS		:= $(ASSETS)/logs
 SCRIPTS		= scripts
 INFO	 	:= $(SCRIPTS)/pinfo
 PDOC		:= $(SCRIPTS)/pdoc.awk
+PCOV		:= $(SCRIPTS)/pcov.sh
 
 BUILD		= build
 BIN			:= $(BUILD)/bin
@@ -195,6 +196,7 @@ tests: clean init $(UDEPS:%.c=$(LOGS)/%.difflog)
 	@find $(BUILD) \( -name "*.gcno" -or -name "*.gcda" -or -empty \) -delete
 	@find $(SRCS) \( -name "*.tab.c" -or -name "*.tab.h" -or -name "*.yy.c" \) -delete
 	@$(INFO) ok coverage
+	@$(PCOV) $(COVXML)
 
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRC INCLUDES TESTS
 
