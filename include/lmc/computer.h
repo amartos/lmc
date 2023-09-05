@@ -1,14 +1,12 @@
 /**
  * @file      computer.h
  * @version   0.1.0
- * @brief     Module principal de l'ordinateur en papier.
- * @year      2022
+ * @brief     Core module of the LMC.
  * @author    Alexandre Martos
- * @email     alexandre.martos (at) protonmail.ch
- * @copyright GNU General Public License v3
- * @compilation
- * flex lmc.lang.lex -o lexlang.c
- * gcc -Wall -std=gnu99 computer.c -o computer.o
+ * @email     contact@amartos.fr
+ * @copyright 2022-2023 Alexandre Martos <contact@amartos.fr>
+ * @license   GPLv3
+ *
  * @addtogroup Computer
  * @{
  */
@@ -18,9 +16,9 @@
 
 #include "lmc/specs.h"
 
-#include <err.h>     // pour les fonctions de gestion d'erreur
-#include <errno.h>   // pour les codes errno
-#include <stdbool.h> // pour le type bool
+#include <err.h>
+#include <errno.h>
+#include <stdbool.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -30,7 +28,7 @@
 // clang-format off
 
 /******************************************************************************
- * @name Structure de l'ordinateur en (e-)papier
+ * @name The LMC structure
  * @{
  ******************************************************************************/
 // clang-format on
@@ -38,106 +36,108 @@
 /**
  * @struct LmcMemory
  * @since 0.1.0
- * @brief Structure de la mémoire de la machine.
+ * @brief LMC memory.
  */
 typedef struct LmcMemory {
     struct {
-        LmcRam wr;          /**< Le registre mot. */
-        LmcRam sr;          /**< Le registre de sélection. */
-    } cache;                /**< Le cache de la mémoire. */
-    LmcRam ram[LMC_MAXRAM]; /**< Le stockage mémoire. */
+        LmcRam wr;          /**< Word Register. */
+        LmcRam sr;          /**< Selection Register. */
+    } cache;                /**< Memory cache. */
+    LmcRam ram[LMC_MAXRAM]; /**< Random Access Memory. */
 } LmcMemory;
 
 /**
  * @struct LmcControlUnit
  * @since 0.1.0
- * @brief La structure de l'unité de contrôle de l'ordinateur.
+ * @brief The LMC control unit.
  */
 typedef struct LmcControlUnit {
     struct {
-        LmcRam op; /**< Le registre de code opératoire. */
-        LmcRam ad; /**< Le registre d'adresse. */
-    } ir;          /**< Le registre d'instruction. */
-    LmcRam pc;     /**< Le registre 'Program Counter'. */
+        LmcRam op; /**< OPerations register. */
+        LmcRam ad; /**< ADdress register. */
+    } ir;          /**< Instructions Register. */
+    LmcRam pc;     /**< Program Counter. */
 } LmcControlUnit;
 
 /**
  * @struct LmcLogicUnit
  * @since 0.1.0
- * @brief La structure de l'unité arithmétique et logique.
+ * @brief The LMC logic unit.
  */
 typedef struct LmcLogicUnit {
-    LmcRam acc;    /**< L'accumulateur. */
-    LmcRam opcode; /**< Le registre pour les codes d'opération. */
+    LmcRam acc;    /**< ACCumulator. */
+    LmcRam opcode; /**< OPerations Code register. */
 } LmcLogicUnit;
 
 /**
  * @struct Bus
  * @since 0.1.0
- * @brief La structure contenant les entrées/sorties.
+ * @brief The LMC bus.
  */
 typedef struct LmcBus {
-    FILE* input;        /**< L'entrée. */
-    FILE* output;       /**< La sortie. */
-    const char* prompt; /**< L'invite de commande. */
-    LmcRam buffer;      /**< Un buffer entre les E/S et la mémoire. */
+    FILE* input;        /**< The computer input device. */
+    FILE* output;       /**< The computer output device. */
+    const char* prompt; /**< The command line prompt. */
+    LmcRam buffer;      /**< A one-byte buffer between IO and memory. */
 } LmcBus;
 
 /**
  * @struct LmcDebugger
  * @since 0.1.0
- * @brief Structure du debugger.
+ * @brief The LMC debugger.
  */
 typedef struct LmcDebugger {
-    LmcRam brk;    /**< Adresse d'arrêt (break). */
-    LmcRam prt;    /**< Adresse dont il faut afficher la valeur. */
-    LmcRam opcode; /**< Opération courante du debugger. */
+    LmcRam brk;    /**< BReaK address register. */
+    LmcRam prt;    /**< Traced address register (PRinT). */
+    LmcRam opcode; /**< Debugger OPeration Code register. */
 } LmcDebugger;
 
 /**
  * @struct LmcComputer
  * @since 0.1.0
- * @brief Structure complète de l'ordinateur.
+ * @brief The full LMC structure.
  */
 typedef struct LmcComputer {
-    LmcMemory mem;     /**< La mémoire de l'ordinateur. */
-    LmcControlUnit cu; /**< L'unité de contrôle. */
-    LmcLogicUnit alu;  /**< L'unité arthmétique et logique. */
-    LmcBus bus;        /**< Le bus de communication avec le monde extérieur. */
-    LmcDebugger dbg;   /**< Le debugger. */
-    bool on;           /**< Drapeau indiquant si l'ordinateur est allumé. */
+    LmcMemory mem;     /**< MEMory. */
+    LmcControlUnit cu; /**< Control Unit. */
+    LmcLogicUnit alu;  /**< Arithmetic-Logic Unit. */
+    LmcBus bus;        /**< Bus. */
+    LmcDebugger dbg;   /**< DeBuGger. */
+    bool on;           /**< flag indicating of the computer is on, or
+                        * (if @c false) in shutdown process/off. */
 } LmcComputer;
 
 // clang-format off
 
 /******************************************************************************
  * @}
- * @name Fonctions de l'ordinateur
+ * @name LMC functions
+ *
  * @{
- * @param filepath Le chemin d'un fichier compilé à exécuter, ou NULL
- * pour entrer en mode de programmation interactive.
- * @param bootstrap Un fichier compilé contenant le bootstrap à
- * utiliser.
- * @return La valeur du registre mot à l'extinction.
+ * @param filepath The compiled program to run. @c NULL indicate to
+ * swtch to in interactive mode where the user must enter the program
+ * manually.
+ * @param bootstrap A compiled bootstrap file path.
+ * @return The word register value at shutdown.
  ******************************************************************************/
 // clang-format on
 
 /**
  * @typedef LmcExec
  * @since 0.1.0
- * @brief Type des fonctions d'exécution de l'ordinateur.
+ * @brief Prototype of the LMC execution functions.
  */
 typedef LmcRam (*LmcExec)(const char* bootstrap, const char* filepath);
 
 /**
  * @since 0.1.0
- * @brief Exécute un programme sans le debugger.
+ * @brief Execute a program without the debugger.
  */
 LmcRam lmc_shell(const char* restrict bootstrap, const char* restrict filepath);
 
 /**
  * @since 0.1.0
- * @brief Exécute un programme avec le debugger.
+ * @brief Execute a program with the debugger.
  */
 LmcRam lmc_dbgShell(const char* restrict bootstrap, const char* restrict filepath);
 

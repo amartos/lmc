@@ -1,15 +1,11 @@
 /**
  * @file      computer.c
  * @version   0.1.0
- * @brief     Tests unitaires du module computer.c
- * @year      2022
+ * @brief     LMC unit tests for the computer module.
  * @author    Alexandre Martos
  * @email     contact@amartos.fr
- * @copyright GNU General Public License v3
- * @compilation
- * gcc -xc -Wall -std=gnu99 -lsccroll -lgcov \
- *     tests/units/computer.c src/core/computer.c \
- *     -o build/bin/tests/units/computer
+ * @copyright 2022-2023 Alexandre Martos <contact@amartos.fr>
+ * @license   GPLv3
  */
 
 #include "tests/common.h"
@@ -21,7 +17,7 @@
 // clang-format off
 
 /******************************************************************************
- * Préparation
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
@@ -39,7 +35,7 @@ void test_lmc_shell(void)
 // clang-format off
 
 /******************************************************************************
- * Tests unitaires.
+ * Tests
  ******************************************************************************/
 // clang-format on
 
@@ -65,8 +61,7 @@ SCCROLL_TEST(
     manual_prog_errors_handling,
     .std = {
         [STDIN_FILENO]  = { .content.blob =
-            // On s'assure d'avoir assez de matière pour tous les
-            // tests.
+            // Ensure to have enough data for all the tests.
             MANUALIN MANUALIN MANUALIN MANUALIN
             MANUALIN MANUALIN MANUALIN MANUALIN
             MANUALIN MANUALIN MANUALIN MANUALIN
@@ -94,7 +89,7 @@ SCCROLL_TEST(
     file_prog,
     .std = {
         [STDIN_FILENO]  = { .content.blob =
-            // operation = résultat (base 16)
+            // operation = result (base 16)
             "03\n08\n" // 3*8 = 18
             "07\n07\n" // 7*7 = 31
             "0f\n03\n" // f/3 = 5
@@ -132,7 +127,7 @@ SCCROLL_TEST(
     file_prog_errors_handling,
     .std = {
         [STDIN_FILENO]  = { .content.blob =
-            // operation = résultat (base 16)
+            // operation = result (base 16)
             "03\n08\n" // 3*8 = 18
             "07\n07\n" // 7*7 = 31
             "0f\n03\n" // f/3 = 5
@@ -181,9 +176,9 @@ SCCROLL_TEST(
     rom_error,
     .std = {
         [STDIN_FILENO]  = { .content.blob =
-            // Erreur de programmation : écriture dans la ROM
+            // Programming error: write in ROM
             "30\n04\n"
-            "48\n01\n" // store @ 01 (erreur)
+            "48\n01\n" // store @ 01 (error)
             "04\n00\n" // stop 00
         },
         [STDOUT_FILENO] = { .content.blob =
@@ -202,9 +197,8 @@ SCCROLL_TEST(
     notanumber_errors_handling,
     .std = {
         [STDIN_FILENO]  = { .content.blob =
-            // Pas un nombre (ligne de commande)
             "30\n04\n"
-            "XY\n"     // erreur
+            "XY\n"     // error: not a number
             "01\n42\n" // out 42
             "04\n00\n" // stop 0
         },
@@ -226,8 +220,7 @@ SCCROLL_TEST(
     chbootstrap,
     .std = {
         [STDIN_FILENO]  = { .content.blob =
-            // Un programme simple, car ce n'est pas le sujet de test
-            // ici.
+            // dummy simple program, not the focus of the test.
             "30\n02\n"
             "04\n00\n" // stop 00
         },

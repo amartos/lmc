@@ -1,11 +1,11 @@
 /**
  * @file       computer.c
  * @version    0.1.0
- * @brief      Ordinateur en papier.
- * @year       2023
+ * @brief      The LMC core module.
  * @author     Alexandre Martos
  * @email      contact@amartos.fr
- * @copyright  GNU General Public License v3
+ * @copyright  2023 Alexandre Martos <contact@amartos.fr>
+ * @license    GPLv3
  *
  * @addtogroup ComputerInternals Structures internes de l'ordinateur.
  * @{
@@ -16,28 +16,30 @@
 // clang-format off
 
 /******************************************************************************
- * @name Exécution
+ * @name Execution
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Exécute un programme avec ou sans le debugger.
- * @param filepath Le chemin d'un fichier compilé à exécuter, ou NULL
- * pour entrer en mode de programmation interactive.
- * @param debug Drapeau indiquant d'allumer (@c true) ou pas (@c
- * false) le debugger.
- * @param bootstrap Un fichier compilé contenant le bootstrap à
- * utiliser.
- * @return La valeur du registre mot à l'extinction.
+ * @brief Execute a compiled program with or without the debugger.
+ * @param bootstrap The compiled bootstrap file path.
+ * @param filepath The file path of the compiled program. @c NULL
+ * switches to interactive mode (manual programmation).
+ * @param debug Use the debugger if @c true.
+ * @return The word register value at shutdown.
  */
 static LmcRam lmc_exec(const char* restrict bootstrap, const char* restrict filepath, bool debug);
 
 /**
  * @since 0.1.0
- * @brief Charge un bootstrap dans l'ordinateur.
- * @param path Le chemin du fichier compilé contenant le bootstrap.
+ * @brief Load a bootstrap in #lmc_hal::mem::ram ROM section.
+ *
+ * This function may raise a fatal error if @p path cannot be
+ * @c rb opened.
+ *
+ * @param path The compiled bootstrap file path.
  */
 static void lmc_bootstrap(const char* restrict path) __attribute__((nonnull));
 
@@ -54,7 +56,7 @@ static void lmc_bootstrap(const char* restrict path) __attribute__((nonnull));
  * @since 0.1.0
  * @def LMC_DBGPROMPT
  * @since 0.1.0
- * @brief L'invite de commande en mode de debug.
+ * @brief The debug mode prompt outputted on #lmc_hal::bus::output.
  */
 #define LMC_DBGPROMPT                                       \
     "PC: " LMC_HEXFMT ", ACC: " LMC_HEXFMT " " LMC_PROMPT,  \
@@ -63,49 +65,50 @@ static void lmc_bootstrap(const char* restrict path) __attribute__((nonnull));
 
 /**
  * @since 0.1.0
- * @brief Lance l'étape du debugger.
- * @return @c true pour passer à l'étape suivante, @c false pour
- * rester dans le mode debug.
+ * @brief Step in the debugger.
+ * @return @c true to execute the next program instruction, @c false
+ * to immediately re-step in the debugger.
  */
 static bool lmc_debug(void);
 
 /**
  * @since 0.1.0
- * @brief Effectue la phase 1 du debuggage.
+ * @brief Debugger phase 1.
  *
- * Affiche la valeur de l'adresse courante si elle celle-ci est
- * stockée dans LmcDebugger::prt, et indique si le debugger doit
- * s'arrêter pour demande d'instructions.
- * @return false pour sauter la phase de debug, true pour la
- * continuer.
+ * Print the current PC address value if it is stored in
+ * #lmc_hal::dbg::prt and indicate if the computer must go into the
+ * debugger second phase.
+ *
+ * @return @c false to skip the next debug phase, @c true to execute
+ * it.
  */
 static bool lmc_dbg_phaseOne(void);
 
 /**
  * @since 0.1.0
- * @brief Effectue la phase 2 du debugger.
+ * @brief Debugger phase 2.
  *
- * Affiche les valeurs de PC et ACC, puis attend des instructions de
- * l'utilisateur.
+ * Print #lmc_hal::cu::pc and #lmc_hal::alu:acc, then wait for
+ * instructions input.
  */
 static void lmc_dbg_phaseTwo(void);
 
 /**
  * @since 0.1.0
- * @brief Effectue la phase 3 du debugger.
+ * @brief Debugger phase 3.
  *
- * Exécute la commande entrée par l'utilisateur en phase 2.
- * @return false pour stopper la phase de debug, true pour la
- * continuer.
+ * Execute the instructions input at phase 2.
+ *
+ * @return @c true to immediately re-step in the debugger, @c false to
+ * continue the program execution.
  */
 static bool lmc_dbg_phaseThree(void);
 
 /**
  * @since 0.1.0
- * @brief Affiche le contenu de la mémoire de l'ordinateur entre deux
- * adresses.
- * @param start L'adresse de début.
- * @param end L'adresse de fin.
+ * @brief Print all the values between two #lmc_hal::mem::ram
+ * addresses.
+ * @param start,end The memory start and end address for the dump.
  */
 static void lmc_dump(LmcRam start, LmcRam end);
 
@@ -113,29 +116,29 @@ static void lmc_dump(LmcRam start, LmcRam end);
 
 /******************************************************************************
  * @}
- * @name Phases du cycle.
+ * @name LMC phases.
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Effectue la phase I: "recherche de l'instruction".
+ * @brief LMC Phase 1: seek for the next instruction.
  */
 static void lmc_phaseOne(void);
 
 /**
  * @since 0.1.0
- * @brief Effectue la phase II: "décodage de l'instruction, recherche
- * de l'opérande et calcul".
- * @param debug Indique si la phase 2 est lancée par le debugger.
- * @return true si la phase III doit être sautée, sinon false.
+ * @brief LMC phase 2: decode the instruction, seek the operand, and
+ * apply the instruction.
+ * @param debug Indicate if the phase is executed from the debugger.
+ * @return @c true to execute phase 3, @c false to skip it.
  */
 static bool lmc_phaseTwo(bool debug);
 
 /**
  * @since 0.1.0
- * @brief Effectue la phase III: "opération suivante".
+ * @brief LMC phase 3: increment PC.
  */
 static void lmc_phaseThree(void);
 
@@ -143,10 +146,10 @@ static void lmc_phaseThree(void);
 
 /******************************************************************************
  * @}
- * @name Gestion de l'I/O.
+ * @name IO management.
  *
- * Les fonctions et structures de ce groupe sont liées à l'interaction
- * de LmcBus avec l'ordinateur et le monde extérieur.
+ * These functions and macros are used for interaction of the LMC with
+ * the external world through the bus.
  * @{
  ******************************************************************************/
 // clang-format on
@@ -154,50 +157,54 @@ static void lmc_phaseThree(void);
 /**
  * @def LMC_PROMPT
  * @since 0.1.0
- * @brief L'invite de commandes.
+ * @brief The default #lmc_hal::bus::input prompt.
  */
 #define LMC_PROMPT "? >"
 
 /**
  * @def LMC_WRDVAL
  * @since 0.1.0
- * @brief La valeur contenue dans LmcComputer::mem::cache::wr dans un
- * format d'affichage avec les fonctions de la famille @c printf.
+ * @brief #lmc_hal::mem::cache::wr value printable using a printf()
+ * family function (no arguments needed).
  */
 #define LMC_WRDVAL LMC_HEXFMT, LMC_MAXDIGITS, lmc_hal.mem.cache.wr
 
 /**
  * @since 0.1.0
- * @brief Récupère un code exadécimal à deux chiffres sur
- * LmcBus::input, et le stocke dans LmcComputer::bus::buffer.
+ * @brief Wait for input from #lmc_hal::bus::input and store it in
+ * #lmc_hal::bus::buffer.
  */
 static void lmc_busInput(void);
 
 /**
  * @since 0.1.0
- * @brief Gère l'entrée du bus.
- * @param filepath Un chemin de fichier de programme, ou @c NULL pour
- * une programmation interactive.
- * @return @c false si l'entée est interactive et que l'utilisateur
- * souhaite quitter le programme (EOF), sinon false.
+ * @brief Handle bus input.
+ *
+ * @attention This function may raise a fatal error if @p filepath
+ * cannot be @c rb opened.
+ *
+ * @param filepath A compiled program file path, or @c NULL for user
+ * direct input.
+ * @return @c false if @p filepath is @c NULL and user sends @c EOF,
+ * (thus a "QUIT" signal) otherwise @p true.
  */
 static bool lmc_setInput(const char* restrict filepath);
 
 /**
  * @since 0.1.0
- * @brief Convertit une chaîne de caractères contenant des chiffres
- * hexadécimaux en un entier stocké dans LmcComputer::bus::buffer.
- * @param number La chaîne de caractères représentant le nombre.
- * @return EXIT_FAILURE en cas d'erreur, sinon EXIT_SUCCESS.
+ * @brief Store in #lmc_hal::bus::buffer a converted number given as a
+ * string.
+ * @param number The number stored as a string.
+ * @return @c EXIT_FAILURE in case of errors, otherwise @c EXIT_SUCCESS.
  */
 static int lmc_convert(const char* restrict number) __attribute__((nonnull));
 
 /**
  * @def lmc_busPrint
  * @since 0.1.0
- * @brief Affiche un message sur LmcComputer::bus::output.
- * @param fmt Une chaîne de formatage type printf.
- * @param ... Les arguments de la chaîne de formatage.
+ * @brief Print a formatted message on #lmc_hal::bus::output.
+ * @param fmt The format string.
+ * @param ... The format string arguments.
  */
 #define lmc_busOutput(fmt, ...) fprintf(lmc_hal.bus.output, fmt, ##__VA_ARGS__)
 
@@ -205,57 +212,56 @@ static int lmc_convert(const char* restrict number) __attribute__((nonnull));
 
 /******************************************************************************
  * @}
- * @name Opérations.
+ * @name Operations
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * since 0.1.0
- * @brief Détermine si l'opcode doit changer.
- * @param operation Le code d'opération sans les informations
- * d'indirection.
+ * @brief Check if #lmc_hal::alu::opcode value must change.
+ * @param operation The operation bytecode without indirection
+ * instructions.
  */
 static void lmc_opcalc(LmcRam operation);
 
 /**
  * @since 0.1.0
- * @brief Retrouve l'opérande de l'opération stockée en mémoire, en
- * fonction du niveau d'indirection indiqué.
- * @param type Le type d'indirection voulu.
+ * @brief Fetch the value of the current #lmc_hal::mem::cache::sr
+ * address, applying the indicated indirection level.
+ * @param type The indirection level (@c 0, #VAR or #VAR|#PTR).
  */
 static void lmc_indirection(LmcRam type);
 
 /**
  * @since 0.1.0
- * @brief Effectue une opération.
- * @param operation Le code d'opération sans les informations
- * d'indirection.
+ * @brief Execute an operation.
+ * @param operation The operation bytecode without indirection
+ * instructions.
  */
 static bool lmc_operation(LmcRam operation);
 
 /**
  * @since 0.1.0
- * @brief Effectue l'opération d'arithmétique décrite par
- * LmcComputer::alu::opcode avec les opérandes
- * LmcComputer::mem::cache::wr et LmcComputer::alu:acc.
+ * @brief Execute the arithmetic instruction store in
+ * #lmc_hal::alu::opcode with the #lmc_hal::mem::cache::wr and
+ * #lmc_hal::alu::acc operands.
  */
 static void lmc_calc(void);
 
 /**
  * @since 0.1.0
- * @brief Lis et écrit dans la mémoire.
+ * @brief Read/Write in #lmc_hal::mem::ram.
  *
- * La fonction vérifie que l'adresse mémoire est correcte pour le mode
- * d'écriture (adresse >= #LMC_MAXROM) et lève une erreur @c EFAULT si
- * elle ne l'est pas. L'ordinateur s'arrête en cas d'erreur.
+ * This function checks that the address and operation are valid,
+ * i.e. that ROM is read-only and RAM is read-write. The function
+ * raises an @c EFAULT error if not and cleanly shutdowns the
+ * computer.
  *
- * @param address L'adresse de la source (mode 'r') ou de destination
- * (mode 'w').
- * @param value La destination de la donnée (mode 'r') ou la source de
- * la donnée (mode 'w').
- * @param mode caractère 'r' pour lire l'emplacement mémoire, ou 'w'
- * pour y écrire.
+ * @param address The read memory address, or write destination address.
+ * @param value The storage destination for read mode, the source
+ * value for write mode.
+ * @param mode The mode, either 'r' for read or 'w' for write.
  */
 static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode) __attribute__((nonnull (2)));
 
@@ -265,7 +271,10 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode) __attribute__
 
 /******************************************************************************
  * @}
- * @name Gestion des microcodes.
+ * @name Microcodes
+ *
+ * This section is optional, can optionally be loaded at compile-time
+ * for a deeper level of emulation, by defining the #_UCODES macro.
  * @{
  ******************************************************************************/
 // clang-format on
@@ -273,49 +282,43 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode) __attribute__
 /**
  * @enum LmcUcodes
  * @since 0.1.0
- * @brief Les microcodes.
+ * @brief The microcodes.
  */
 typedef enum __attribute__ ((__packed__)) LmcUcodes {
-    PCTOSR = 1, /**< 1 Écrit la valeur du *program counter* dans le registre de sélection. */
-    WRTOPC,     /**< 2 Écrit le contenu du registre mot dans *program counter*. */
-    WRTOAC,     /**< 3 Écrit le contenu du registre mot dans l'accumulateur. */
-    ACTOWR,     /**< 4 Écrit le contenu de l'accumulateur dans le registre mot.  */
-    WRTOOP,     /**< 5 Écrit le contenu du registre mot dans le registre de code opératoire
-                 * de l'unité arithmétique et logique (UAL). */
-    WRTOAD,     /**< 6 Écrit le contenu du registre mot dans le regitre d'adresse. */
-    ADTOSR,     /**< 7 Écrit le contenu du registre d'adresse dans le registre de sélection. */
-    INTOWR,     /**< 8 Écrit le contenu du tampon d'entrée du bus dans le registre mot. */
-    WRTOOU,     /**< 9 Écrit le contenu du registre mot sur le tampon d'ouput du bus. */
-    ADDOPD,     /**< 10 Écrit la valeur ADD dans le registre de code opératoire de l'UAL. */
-    SUBOPD,     /**< 11 Écrit la valeur SUB dans le registre de code opératoire de l'UAL. */
-    DOCALC,     /**< 12 Effectue l'opération inscrite dans le registre de code opératoire de
-                 * l'UAL. */
-    SVTOWR,     /**< 13 Écrit la valeur stockée à l'adresse située dans le registre de
-                 * sélection dans le registre mot. */
-    WRTOSV,     /**< 14 Écrit la valeur du registre mot dans l'emplacement dont l'adresse est
-                 * située dans le registre de sélection. */
-    INCRPC,     /**< 15 Incrémente le *program counter*. */
-    WINPUT,     /**< 16 Attend une entrée de l'utilisateur. */
-    NANDOP,     /**< 17 Écrit la valeur NAND dans le registre de code opératoire de l'UAL. */
-    LMCHLT,     /**< 18 Ajout personnel: éteint l'ordinateur. */
+    PCTOSR = 1, /**< 01 Write #lmc_hal::cu:pc in #lmc_hal::mem::cache::sr. */
+    WRTOPC,     /**< 02 Write #lmc_hal::mem::cache::wr in #lmc_hal::cu::pc. */
+    WRTOAC,     /**< 03 Write #lmc_hal::mem::cache::wr in #lmc_hal::alu::acc. */
+    ACTOWR,     /**< 04 Write #lmc_hal::alu::acc in #lmc_hal::mem::cache::wr. */
+    WRTOOP,     /**< 05 Write #lmc_hal::mem::cache::wr in #lmc_hal::alu::opcode. */
+    WRTOAD,     /**< 06 Write #lmc_hal::mem::cache::wr in #lmc_hal::cu::ir::ad. */
+    ADTOSR,     /**< 07 Write #lmc_hal::cu::ir::ad in #lmc_hal::mem::cache::sr. */
+    INTOWR,     /**< 08 Write #lmc_hal::bus::buffer in #lmc_hal::mem::cache::wr. */
+    WRTOOU,     /**< 09 Write #lmc_hal::mem::cache::wr in #lmc_hal::bus::output. */
+    ADDOPD,     /**< 10 Write #ADD in #lmc_hal::alu::opcode. */
+    SUBOPD,     /**< 11 Write #SUB in #lmc_hal::alu::opcode. */
+    DOCALC,     /**< 12 Execute the instruction stored in #lmc_hal::alu::opcode. */
+    SVTOWR,     /**< 13 Write the memory slot value pointed by #lmc_hal::mem::cache::sr in #lmc_hal::mem::cache::wr. */
+    WRTOSV,     /**< 14 Write #lmc_hal::mem::cache::wr in the memory slot pointed by #lmc_hal::mem::cache::sr. */
+    INCRPC,     /**< 15 Increment #lmc_hal::cu::pc. */
+    WINPUT,     /**< 16 Wait for input in #lmc_hal::bus::input. */
+    NANDOP,     /**< 17 Write #NAND in #lmc_hal::alu::opcode. */
+    LMCHLT,     /**< 18 Set #lmc_hal::on to @c false. */
 } LmcUcodes;
 
 /**
  * @since 0.1.0
- * @brief Effectue une série d'opérations de microcodes.
- * @attention La valeur @c NULL est utilisée comme sentinelle de la
- * fonction (elle doit obligatoirement être la dernière donnée en
- * arguments).
- * @param ucode Un microcode.
- * @param ... Le reste des microcodes, avec un NULL en dernière
- * position.
+ * @brief Execute a series of microcodes operations.
+ * @attention Needs a @c NULL sentinel value.
+ * @param ucode A microcode.
+ * @param ... The remaining microcodes with a @c NULL as last
+ * argument.
  */
 static void lmc_useries(unsigned int ucode, ...) __attribute__((sentinel));
 
 /**
  * @since 0.1.0
- * @brief Effectue une opération de microcode.
- * @param ucode Le code de l'opération à effectuer.
+ * @brief Execute one microcode operation.
+ * @param ucode The microcode.
  */
 static void lmc_ucode(LmcUcodes ucode);
 
@@ -325,28 +328,27 @@ static void lmc_ucode(LmcUcodes ucode);
 
 /******************************************************************************
  * @}
- * @name L'ordinateur et son bootstrap.
+ * @name The LMC.
  * @{
  ******************************************************************************/
 
 /**
  * @var lmc_hal
  * @since 0.1.0
- * @brief L'ordinateur utilisé pour exécuter les programmes.
+ * @brief The LMC computer.
  */
 static LmcComputer lmc_hal = {0};
 
 /**
  * @var lmc_template
  * @since 0.1.0
- * @brief Un modèle de l'ordinateur à l'état initial.
+ * @brief A template for #lmc_hal, including a default bootstrap.
  */
 static const LmcComputer lmc_template = {
     .bus = { .prompt = LMC_PROMPT, },
-    // le bootstrap
     .mem.ram = {
-        // Le bootstrap.
-        // opération    valeur   adresse traduction (en base 16)
+        // The bootstrap
+        // operation    argument adress  instruction translation (base 16)
         IN | VAR,       0x20, // 00      in @ 20
         IN | VAR,       0x22, // 02      in @ 22
         LOAD | VAR,     0x20, // 04      load @ 20
@@ -359,7 +361,11 @@ static const LmcComputer lmc_template = {
         LOAD | VAR,     0x21, // 12      load @ 21
         ADD,            0x01, // 14      add 01
         JUMP,           0x06, // 16      jump 06
-        // On saute plusieurs emplacements.
+        // The last instruction is at the end of the ROM, the slots
+        // in-between are set to 0. This instruction does not have a
+        // preset argument, as the latter is the program start address
+        // given by the program header. This instruction is in ROM,
+        // while the address is in RAM.
         [LMC_MAXROM-1] = JUMP,
     },
 };
@@ -367,7 +373,7 @@ static const LmcComputer lmc_template = {
 
 /******************************************************************************
  * @}
- * Implémentation
+ * Implementation
  ******************************************************************************/
 // clang-format on
 
@@ -379,37 +385,33 @@ LmcRam lmc_dbgShell(const char* restrict bootstrap, const char* restrict filepat
 
 static LmcRam lmc_exec(const char* restrict bootstrap, const char* restrict filepath, bool debug)
 {
-    // on reset l'ordinateur pour éviter de mélanger les données de
-    // plusieurs programmes.
+    // reset the computer to avoid mixing data between the programs.
     lmc_hal = lmc_template;
-
-    // On charge le bootstrap.
     lmc_bootstrap(bootstrap);
 
-    // stdin et stdout ne sont pas des constantes, donc assignables
-    // uniquement en runtime. Si aucun programme n'est donné au
-    // départ, on utilise stdin par défaut.
+    // FILE* stdin and stdout are not compile-time constants, thus
+    // only assignable at run-time.
     lmc_hal.bus.input  = stdin;
     lmc_hal.bus.output = stdout;
     lmc_setInput(filepath);
 
-    // On exécute le programme.
     lmc_hal.on = true; // Hello Dave. You are looking well today.
     lmc_hal.dbg.opcode = debug ? DEBUG : 0;
     while (lmc_hal.on) {
         while(lmc_debug());
         lmc_phaseOne(), lmc_phaseTwo(false) ? lmc_phaseThree() : 0;
     }
-    return lmc_hal.mem.cache.wr; // code de status du programme
+    return lmc_hal.mem.cache.wr;
 }
 
 static void lmc_bootstrap(const char* restrict path)
 {
     FILE* file = fopen(path, "rb");
-    // Puisque le bootstrap est compilé avec le même programme,
-    // les deux premières valeurs seront la position initiale et
-    // la taille du programme. Or, on sait où le programme doit se
-    // situer, et la taille importe peu. Donc, on les saute.
+    // As the bootstrap is itself compiled using the LMC compiler, the
+    // first two values are the start position and the size. But both
+    // are already known at compile time (start 0, size MAX_ROM even
+    // if the bootstrap is smaller). Thus, the first two bytecodes are
+    // skipped.
     if (!file
         || fseek(file, sizeof(LmcRam)*2, SEEK_SET)
         || (!fread(lmc_hal.mem.ram, sizeof(LmcRam), LMC_MAXROM, file) && ferror(file)))
@@ -434,22 +436,15 @@ static bool lmc_debug(void)
 
 static bool lmc_dbg_phaseOne(void)
 {
-    // On vérifie si l'ordinateur n'est pas en phase d'extinction, et
-    // si le debugger est allumé.
     if (!(lmc_hal.on && lmc_hal.dbg.opcode))
         return false;
 
-    // On vérifie si l'adresse courante est dans LmcDebugger::prt et
-    // on affiche sa valeur si c'est le cas.
-    if (lmc_hal.dbg.prt // on ne veut pas de l'adresse 0
+    if (lmc_hal.dbg.prt // we don't want to print the value of address 0x00.
         && lmc_hal.dbg.prt == lmc_hal.cu.pc)
         lmc_dump(lmc_hal.cu.pc, lmc_hal.cu.pc);
 
-    // On vérifie que le debugger n'est pas en phase "continue", et
-    // donc on saute toutes les adresses sauf celle de
-    // LmcDebugger::brk ("break").
     if (lmc_hal.dbg.opcode == CONT
-        && lmc_hal.dbg.brk // on ne veut pas s'arrêter à l'adresse 0
+        && lmc_hal.dbg.brk // ibid, skip address 0x00
         && lmc_hal.cu.pc != lmc_hal.dbg.brk)
         return false;
 
@@ -458,20 +453,19 @@ static bool lmc_dbg_phaseOne(void)
 
 static void lmc_dbg_phaseTwo(void)
 {
-    // On modifie le prompt pour afficher les valeurs de PC et ACC.
+    // Set the special prompt for the debugger.
     char prompt[BUFSIZ] = {0};
     sprintf(prompt, LMC_DBGPROMPT);
     lmc_hal.bus.prompt = prompt;
 
-    // On récupère les codes d'opération et d'argument pour la phase
-    // du debugger. On peut se permettre ici d'écraser l'opcode, car
-    // la phase de debug est située en amont de la phase 1 de
-    // l'ordinateur.
+    // The opcode is overwritten without issue because the debug phase
+    // is upstream of the LMC phase 1, and the previous opcode is not
+    // used anymore.
     lmc_busInput(), lmc_hal.alu.opcode   = lmc_hal.bus.buffer;
     lmc_busInput(), lmc_hal.mem.cache.wr = lmc_hal.bus.buffer;
 
-    // On rétablit le prompt originel au cas où la commande arrête la
-    // phase de debug.
+    // Reset the prompt in case the debug instruction exits the
+    // debugger.
     lmc_hal.bus.prompt = LMC_PROMPT;
 }
 
@@ -492,7 +486,7 @@ static void lmc_dump(LmcRam start, LmcRam end)
 // clang-format off
 
 /******************************************************************************
- * Phases du cycle.
+ * LMC cycle.
  ******************************************************************************/
 // clang-format on
 
@@ -506,18 +500,15 @@ static void lmc_phaseOne(void) {
 
 static bool lmc_phaseTwo(bool debug)
 {
-    // On sépare le code indiquant où chercher l'opérande de
-    // celui de l'opération.
+    // Split the indirection instruction from the operation bytecode.
     LmcRam operation = lmc_hal.alu.opcode & ~(INDIR);
     LmcRam value     = lmc_hal.alu.opcode & INDIR;
 
-    // On modifie le code opératoire au besoin.
     lmc_opcalc(operation);
-
-    // Si le debugger lance une phase 2, aller chercher la valeur de
-    // l'argument dans l'adresse courante de PC va écraser l'argument
-    // donné via le debugger. On modifie donc la phase 2 pour éviter
-    // cet écrasement.
+    // If the caller is the debugger, fetching the operation argument
+    // as usual, i.e. from the current PC address, will overwrite the
+    // argument given to the debugger and stored in the word
+    // register. Hence the branching to avoid this.
     if (debug) { lmc_hal.mem.cache.sr = lmc_hal.mem.cache.wr; }
     else {
 #ifdef _UCODES
@@ -526,10 +517,7 @@ static bool lmc_phaseTwo(bool debug)
     lmc_hal.mem.cache.sr = lmc_hal.cu.pc;
 #endif
     }
-    // On va chercher la valeur de l'opérande.
     lmc_indirection(value);
-
-    // On lance l'opération.
     return lmc_operation(operation);
 }
 
@@ -544,7 +532,7 @@ static void lmc_phaseThree(void) {
 // clang-format off
 
 /******************************************************************************
- * Gestion de l'I/O
+ * IO handling
  ******************************************************************************/
 // clang-format on
 
@@ -570,15 +558,13 @@ static void lmc_busInput(void)
 
     if (lmc_hal.bus.input == stdin) fprintf(lmc_hal.bus.output, "%s", lmc_hal.bus.prompt);
 
-    // Au lieu d'utiliser le format "%2x",on capte tout d'abord la
-    // chaîne de caractères, et on la convertit en entière. Cette
-    // méthode permet de gérer les cas où le premier caractère est
-    // compatible avec un nombre hexadécimal, mais pas le suivant (ce
-    // qui validerait tout de même le scan), exemple: 'foobar' qui
-    // donnerait '0f'. Ici, si la conversion échoue, on sait que l'un
-    // des caractères au moins n'est pas un chiffre hexadécimal.
+    // Instead of directly using a "%2x" format string, first fetch
+    // a generic string, and then convert. This method is prefered as
+    // it handles cases where the first character is an hexadecimal
+    // digit but not the next one; for example if the string "foobar"
+    // is given, the "%2x" value would give 0x0f instead of an error.
     eof = lmc_hal.bus.input == stdin
-        ? (fscanf(lmc_hal.bus.input, "%s", (char*)digits) < 1
+        ? (fscanf(lmc_hal.bus.input, "%*s", BUFSIZ-1, (char*)digits) < 1
            || (error = lmc_convert(digits)))
         : fread(&lmc_hal.bus.buffer, sizeof(LmcRam), 1, lmc_hal.bus.input) < 1;
 
@@ -589,11 +575,8 @@ static void lmc_busInput(void)
         }
         else if (ferror(lmc_hal.bus.input)) warn(NULL);
 
-        // Si l'entrée n'est pas sur la ligne de commande, autant
-        // ne pas risquer des erreurs supplémentaires à la lecture
-        // du fichier. On abandonne, et on repasse sur stdin. Si
-        // l'entrée est stdin, et que le signal EOF a été donné, on
-        // quitte.
+        // Fallback in interactive mode if EOF or an error occurs on a
+        // compiled program file. Shutdown at EOF in interactive.
         return lmc_setInput(NULL) ? lmc_busInput() : NULL;
     }
 }
@@ -616,7 +599,7 @@ static int lmc_convert(const char* restrict number)
 // clang-format off
 
 /******************************************************************************
- * Opérations
+ * Operations
  ******************************************************************************/
 // clang-format on
 
@@ -629,7 +612,7 @@ static void lmc_opcalc(LmcRam operation)
     case SUB:  opcode = SUBOPD; goto op_calc;
     case NAND: opcode = NANDOP; goto op_calc;
     default:
-    op_calc:   lmc_ucode(opcode); break; // si opcode est nul, ne fait rien
+    op_calc:   lmc_ucode(opcode); break; // Opcode 0 does nothing
 #else
     case ADD:  __attribute__((fallthrough));
     case SUB:  __attribute__((fallthrough));
@@ -642,7 +625,7 @@ static void lmc_opcalc(LmcRam operation)
 
 static void lmc_indirection(LmcRam type)
 {
-    // On va chercher la valeur de l'opérande.
+    // Fallthrough as the indirection operations are cumulative.
     switch (type) {
 #ifdef _UCODES
     case INDIR: lmc_useries(SVTOWR, WRTOAD, ADTOSR, NULL); __attribute__((fallthrough));
@@ -691,7 +674,7 @@ static bool lmc_operation(LmcRam operation)
     op_jump:    lmc_hal.cu.pc = lmc_hal.mem.cache.wr; return false;
     case HLT:   return (lmc_hal.on = false);
 #endif
-    // opérations de debuggage.
+    // Debugging instructions
     case DEBUG: return (lmc_hal.dbg.opcode = lmc_hal.mem.cache.wr);
     case CONT:  lmc_hal.dbg.opcode = lmc_hal.mem.cache.wr; return false;
     case NEXT:  break;
@@ -704,7 +687,7 @@ static bool lmc_operation(LmcRam operation)
         lmc_dump(lmc_hal.mem.cache.wr, lmc_hal.bus.buffer);
         break;
     default:
-        // Pour _UCODES où la variable est inutilisée.
+        // In case the macro _UCODES is undefined.
         (void) value;
         break;
     }
@@ -724,13 +707,12 @@ static void lmc_calc(void)
 static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
 {
     switch (mode) {
-    // On ne vérifie pas les adresses en dehors de la RAM ici car
-    // LmcRam ne peut prendre de valeur en dehors. On est donc
-    // toujours assuré d'avoir une adresse "dans les clous" (ce
-    // qui ne veut pas dire correcte).
+    // LmcRam cannot have a value greater than the max size of RAM,
+    // thus it is not checked. This ensures to avoid a real SIGSEGV,
+    // but not a valid rw operation (due to overflow).
     case 'r': *value = lmc_hal.mem.ram[address]; break;
     case 'w':
-        // On simule une erreur d'écriture dans la ROM.
+        // Emulate a invalid write error.
         if (address < LMC_MAXROM) {
             lmc_hal.on         = false;
             errno              = EFAULT;
@@ -748,7 +730,7 @@ static void lmc_rwMemory(LmcRam address, LmcRam* value, char mode)
 // clang-format off
 
 /******************************************************************************
- * Gestion des microcodes
+ * Microcodes handling
  ******************************************************************************/
 // clang-format on
 
@@ -763,46 +745,40 @@ static void lmc_useries(unsigned int ucode, ...)
 
 static void lmc_ucode(LmcUcodes ucode)
 {
-    // On utilise des fonctions pour WRTOOU, DOCALC, SVTOWR, WRTOSV,
-    // et WINPUT pour plusieurs raisons:
+    // Functions are used for WRTOOU, DOCALC, SVTOWR, WRTOSV, and
+    // WINPUT in order to:
     //
-    // - permettre d'accomoder le code aux deux versions du logiciel
-    //   (avec/sans microcodes), puisque ces opérations sont communes
-    //   aux deux;
-    // - permettre à WINPUT de gérer plusieurs sources d'input
-    //   possibles (utilisateur/fichier compilé);
-    // - émuler la capacité de lecture seule de la mémoire morte;
-    // - séparer les erreurs de segmentation dûes au code de
-    //   l'ordinateur lui-même des erreurs des programmes qui lui sont
-    //   fournis -- bien qu'un debugger suffirait, cette
-    //   fonctionnalité accélère le processus et le rend moins
-    //   complexe;
+    // - allow the two versions (with and without _UCODES) to work
+    // - allow WINPUT to agnostically handle multiple input sources
+    // - implement ROM protection
+    // - distinguish between real SIGSEGV errors from the LMC programs
+    //   errors; this is not strictly necessary in production versions
+    //   of the LMC software, but greatly help during development
 
     switch (ucode) {
-    case PCTOSR: lmc_hal.mem.cache.sr = lmc_hal.cu.pc; break;      // 1
-    case WRTOPC: lmc_hal.cu.pc = lmc_hal.mem.cache.wr; break;      // 2, skip phase suivante
-    case WRTOAC: lmc_hal.alu.acc = lmc_hal.mem.cache.wr; break;    // 3
-    case ACTOWR: lmc_hal.mem.cache.wr = lmc_hal.alu.acc; break;    // 4
-    case WRTOOP: lmc_hal.alu.opcode = lmc_hal.mem.cache.wr; break; // 5
-    case WRTOAD: lmc_hal.cu.ir.ad = lmc_hal.mem.cache.wr; break;   // 6
-    case ADTOSR: lmc_hal.mem.cache.sr = lmc_hal.cu.ir.ad; break;   // 7
-    case INTOWR: lmc_hal.mem.cache.wr = lmc_hal.bus.buffer; break; // 8
-    case WRTOOU: lmc_busOutput(LMC_WRDVAL); break;                    // 9
-    case ADDOPD: lmc_hal.alu.opcode = ADD; break;                     // 10
-    case SUBOPD: lmc_hal.alu.opcode = SUB; break;                     // 11
-    case DOCALC: lmc_calc(); break;                                   // 12
-    case SVTOWR: __attribute__((fallthrough)); // 13
-    case WRTOSV:                               // 14
+    case PCTOSR: lmc_hal.mem.cache.sr = lmc_hal.cu.pc; break;
+    case WRTOPC: lmc_hal.cu.pc = lmc_hal.mem.cache.wr; break;
+    case WRTOAC: lmc_hal.alu.acc = lmc_hal.mem.cache.wr; break;
+    case ACTOWR: lmc_hal.mem.cache.wr = lmc_hal.alu.acc; break;
+    case WRTOOP: lmc_hal.alu.opcode = lmc_hal.mem.cache.wr; break;
+    case WRTOAD: lmc_hal.cu.ir.ad = lmc_hal.mem.cache.wr; break;
+    case ADTOSR: lmc_hal.mem.cache.sr = lmc_hal.cu.ir.ad; break;
+    case INTOWR: lmc_hal.mem.cache.wr = lmc_hal.bus.buffer; break;
+    case WRTOOU: lmc_busOutput(LMC_WRDVAL); break;
+    case ADDOPD: lmc_hal.alu.opcode = ADD; break;
+    case SUBOPD: lmc_hal.alu.opcode = SUB; break;
+    case DOCALC: lmc_calc(); break;
+    case SVTOWR: __attribute__((fallthrough));
+    case WRTOSV:
         lmc_rwMemory(
             lmc_hal.mem.cache.sr,
-            &lmc_hal.mem.cache.wr,
-            ucode == SVTOWR ? 'r' : 'w'
+            &lmc_hal.mem.cache.wr, ucode == SVTOWR ? 'r' : 'w'
         );
         break;
-    case INCRPC: ++lmc_hal.cu.pc; break;           // 15
-    case WINPUT: lmc_busInput(); break;            // 16
-    case NANDOP: lmc_hal.alu.opcode = NAND; break; // 17
-    case LMCHLT: lmc_hal.on = false; break;        // 18, extinction
+    case INCRPC: ++lmc_hal.cu.pc; break;
+    case WINPUT: lmc_busInput(); break;
+    case NANDOP: lmc_hal.alu.opcode = NAND; break;
+    case LMCHLT: lmc_hal.on = false; break;
     default: break;
     }
 }
