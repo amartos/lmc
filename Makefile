@@ -1,5 +1,5 @@
 ###############################################################################
-# Informations sur le projet
+# Project infos
 ###############################################################################
 
 LICENSEFILE	= LICENSE
@@ -12,7 +12,7 @@ LOGO		=
 
 
 ###############################################################################
-# Environnement
+# Environment
 ###############################################################################
 
 SHELL		= /usr/bin/env bash
@@ -42,7 +42,7 @@ INSTALL		:= $(BIN:$(BUILD)/%=$(PREFIX)/%)
 
 
 ###############################################################################
-# Chemins des sources
+# Sources
 ###############################################################################
 
 SRCTREE		:= $(shell find $(SRCS) -type d)
@@ -58,13 +58,12 @@ vpath %.l    $(SRCTREE)
 
 
 ###############################################################################
-# Paramètres de compilation
+# Compilation parameters
 ###############################################################################
 
 YDEPS		:= $(shell find $(SRCS) -type f -name "*.y")
 LDEPS		:= $(shell find $(SRCS) -type f -name "*.l")
-# L'ordre YDEPS LDEPS est important pour la génération de fichiers en-têtes
-# par bison, utilisés par flex.
+# YDEPS and LDEPS order is important for the flex/bison headers generation.
 CDEPS		:= $(YDEPS:%.y=$(notdir %.tab.c)) \
 				$(LDEPS:%.l=$(notdir %.yy.c)) \
 				$(shell find $(SRCS) -type f -name "*.c" -and -not -name "$(PROJECT).c")
@@ -78,14 +77,14 @@ LDLIBS	 	=
 
 
 ###############################################################################
-# Paramètres de couverture de code
+# Code coverage
 ###############################################################################
 
 COVFILE		:= $(REPORTS)/coverage
 COVXML		:= $(COVFILE).xml
 COVHTML		:= $(COVFILE).html
 
-# Limites de couverture de code acceptées en %
+# Accepted limits for coverage in %
 COVHIGH		= 98
 COVLOW		= 75
 
@@ -102,11 +101,11 @@ COVOPTSHTML	:= --html-details $(COVHTML) \
 
 
 ###############################################################################
-# Paramètres de documentation
+# Documentation
 ###############################################################################
 
 DOCS		= docs
-DOCSLANG	= French
+DOCSLANG	= English
 DOX			= doxygen
 DOXCONF		:= $(DOCS)/$(DOX).conf
 DOXOPTS		:= -q $(DOXCONF)
@@ -117,7 +116,7 @@ PDF			:= $(LATEX)/refman.pdf
 
 
 ###############################################################################
-# Cibles à patterns
+# Patterns recipes
 ###############################################################################
 
 %.tab.c: %.y
@@ -142,9 +141,8 @@ $(LOGS)/%.log: $(BIN)/%
 		&& $(INFO) pass $(*F) \
 		|| ($(INFO) fail $(*F); true)
 
-# Cette recette ne devrait pas être souvent utilisée. Elle existe pour
-# le cas où l'on est en train de construire un test unitaire, et que
-# le premier log est inexistant.
+# This recipe is used when building a unit test and the test log is
+# not yet available.
 $(TLOGS)/%.log:
 	@mkdir -p $(@D)
 	@touch $@
@@ -158,16 +156,15 @@ $(LOGS)/%.difflog: $(TLOGS)/%.log $(LOGS)/%.log
 
 
 ###############################################################################
-# Autres cibles
+# Other recipes
 ###############################################################################
 
 .PHONY: all $(PROJECT) install tests docs init help
 .PRECIOUS: $(DEPS)/%.d $(OBJS)/%.o $(LOGS)/%.difflog $(TLOGS)/%.log
 
-# @brief Compile la cible principale du project
+# @brief Compile the software
 all: $(PROJECT)
 
-# Compile la cible principale du project (cible par défaut)
 $(PROJECT): CDEPS  += $(shell find $(SRCS) -type f -name $(PROJECT).c)
 $(PROJECT): CFLAGS += -O3
 $(PROJECT): %: clean init $(BIN)/%
@@ -175,22 +172,22 @@ $(PROJECT): %: clean init $(BIN)/%
 	@find $(SRCS) \( -name "*.tab.c" -or -name "*.tab.h" -or -name "*.yy.c" \) -delete
 	@$(INFO) ok $@
 
-# @brief Compile la cible principale avec fonctionnalités de debuggage
+# @brief Compile the debug version of the software
 debug: CFLAGS += -g -DDEBUG
 debug: $(PROJECT)
 	@$(INFO) ok $@
 
-# @brief Installe le logiciel compilé sur le système.
+# @brief Compile and install the software
 install: $(PROJECT)
 	@mkdir -p $(INSTALL)
 	@cp $(PROJECT) $(INSTALL)/
 	@$(INFO) $(PROJECT) installed in $(INSTALL)
 
-# @brief Exécute les tests du projet (unitaires, couverture, etc...) sans les microcodes
+# @brief Execute the tests without the microcodes
 tests-no-ucodes: CFLAGS = $(shell grep -v "D_UCODES" compile_flags.txt)
 tests-no-ucodes: tests
 
-# @brief Exécute les tests du projet (unitaires, couverture, etc...)
+# @brief Execute the tests: units tests, coverage
 tests: CFLAGS += -g -O0 --coverage
 tests: LDLIBS += -L$(LIBS) -lsccroll -ldl --coverage
 tests: clean init $(UDEPS:%.c=$(LOGS)/%.difflog)
@@ -201,24 +198,24 @@ tests: clean init $(UDEPS:%.c=$(LOGS)/%.difflog)
 
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRC INCLUDES TESTS
 
-# @brief Génère la documentation automatisée du projet
+# @brief Build the project documentation
 docs: $(DOXCONF)
 	@$(DOX) $(DOXOPTS)
 	@$(MAKE) -C $(LATEX) pdf && mv $(PDF) $(DOCS)/
 	@$(INFO) ok $@
 
-# @brief Initialise le dossier de compilation
+# @brief Initialize the compilation directory
 init:
 	@mkdir -p $(BIN) $(OBJS) $(LOGS) $(DEPS) $(LIBS) $(REPORTS)
 
-# @brief Nettoyage post-compilation
+# @brief Nuke all files not in VCS
 clean:
 	@git clean -q -d -f
 
-# @brief Affiche la documentation du Makefile
+# @brief Print the Makefile documentation
 help:
 	@head -n 5 $(LICENSEFILE)
-	@echo "Cibles disponibles:"
+	@echo "Available recipes:"
 	@$(PDOC) Makefile | sed "s/\$$(PROJECT)/$(PROJECT)/g"
 
 -include $(wildcard $(DEPS)/*/*.d)
