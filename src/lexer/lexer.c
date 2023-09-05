@@ -1,14 +1,14 @@
 /**
  * @file        lexer.c
  * @version     0.1.0
- * @brief       Module de traduction de l'ordinateur en papier.
+ * @brief       Lexer for the LMC compiler.
  * @year        2023
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
- * @copyright   GNU General Public License v3
- * @compilation cf. lmc.h
+ * @copyright   2023 Alexandre Martos <contact@amartos.fr>
+ * @license     GPLv3
  *
- * @addtogroup LexerInternals Structure internes du traducteur.
+ * @addtogroup LexerInternals Internal structures of the Lexer.
  * @{
  */
 
@@ -17,29 +17,30 @@
 // clang-format off
 
 /******************************************************************************
- * @name Traduction des mnémoniques en codes d'opération.
+ * @name Mnemonics translation.
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Génère la table de hachage des mots clés.
+ * @brief Generate the keywords hash table.
  */
 static void lmc_hcreate(void) __attribute__((constructor));
 
-// on ajoute l'attribut destructor à une fonction de la librairie
-// standard, pour l'inscrire automatiquement à l'exit.
+// this function is already defined in the standard library, and not
+// redefined here. The only change of this prototype is the addition
+// of the destructor attribute, which will register it at exit without
+// using the atexit function.
 void hdestroy(void) __attribute__((destructor));
 
 /**
  * @def LMC_LEXERSWITCH
  * @since 0.1.0
- * @brief Macro générant un case de switch renvoyant la chaîne donnée
- * avec l'opcode.
- * @param opcode Un code d'opération.
- * @param string La chaîne contenant une commande correspondant au
- * code d'opération.
+ * @brief Cenerate a switch case for the reverse translation of
+ * operation codes.
+ * @param opcode An operation bytecode.
+ * @param string The corresponding keyword.
  */
 #define LMC_LEXERSWITCH(opcode,string) case opcode: return string;
 
@@ -65,17 +66,15 @@ static void lmc_hcreate(void)
     int status      = 0;
     ENTRY entry     = {0};
 
-    // on utilise hcreate ici car le programme n'a pas besoin de plus
-    // d'une table de hachage.
+    // The whole program does not need more than one hash table.
     if (!(status = hcreate(LMC_MAXRAM)) && errno)
         err(EXIT_FAILURE, "could not create hash table");
-    else if (!status && !errno) return; // Une table de hachage existe déjà.
+    else if (!status && !errno) return;
 
-    // on entre les données dans la table.
     for (size_t i = 0; i < LMC_MAXRAM; ++i)
         if (*(entry.key = (char*)lmc_keyword(i))) {
-            // on stocke une valeur, non un pointeur. Cette tactique
-            // est employée dans l'exemple donné dans le manuel de hsearch.
+            // A value is stored, not a pointer. This tactic is given
+            // as an example in the hsearch manual.
             entry.data = (void*)i;
             if (!hsearch(entry, ENTER))
                 err(EXIT_FAILURE, "could not add '%s' item in hash table", entry.key);
@@ -84,16 +83,15 @@ static void lmc_hcreate(void)
 
 LmcOpCodes lmc_opcode(char* keyword)
 {
-    // on cherche le mot-clé donné dans la table de hachage. Cependant,
-    // si le mot-clé n'y est pas, ou que la chaîne est vide, on
-    // renvoie 0.
     ENTRY entry = { .key = keyword, };
     ENTRY* retval = NULL;
     LmcOpCodes value = 0;
     if (*keyword && !(retval = hsearch(entry, FIND)))
         err(EXIT_FAILURE, "unknown item '%s'", keyword);
     else if (retval)
-        // size_t pour la taille du type, compatible avec void*
+        // use size_t for void* size compatibility. The implicit cast
+        // handles the truncation. No sign issue is expected as the
+        // operations bytecodes are all unsigned.
         value = (size_t)(retval->data);
     return value;
 }

@@ -1,15 +1,11 @@
 /**
- * @file      compiler.c
+ * @file      lexer.c
  * @version   0.1.0
- * @brief     Tests unitaires du compilateur.
- * @year      2022
+ * @brief     Lexer unit tests.
  * @author    Alexandre Martos
  * @email     contact@amartos.fr
- * @copyright GNU General Public License v3
- * @compilation
- * gcc -xc -Wall -std=gnu99 -lsccroll -lgcov \
- *     tests/units/computer.c src/core/computer.c \
- *     -o build/bin/tests/units/computer
+ * @copyright 2022-2023 Alexandre Martos <contact@amartos.fr>
+ * @license   GPLv3
  */
 
 #include "tests/common.h"
@@ -22,14 +18,12 @@
 // clang-format off
 
 /******************************************************************************
- * Préparation
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
-// Variable contenant du code traduit pour comparaison.
 LmcRamArray bytes = {0};
 
-// test de lmc_opcode
 void test_opcode(void)
 {
     int i;
@@ -40,7 +34,6 @@ void test_opcode(void)
     if (!sccroll_mockGetTrigger()) assert(lmc_opcode("") == 0);
 }
 
-// test de lmc_append.
 void test_append(void)
 {
     LmcRam values[10] = { 0 };
@@ -55,7 +48,7 @@ void test_append(void)
     }
 }
 
-// Callback vérifiant la traduction de code.
+// Callback to check the translation.
 __attribute__((nonnull (1)))
 void lmc_lexerCheckerCallback(LmcRamArray* array, LmcRam code, LmcRam value)
 {
@@ -64,7 +57,7 @@ void lmc_lexerCheckerCallback(LmcRamArray* array, LmcRam code, LmcRam value)
     array->current += 2;
 }
 
-// Callback qui interromp le programme s'il est appelé.
+// Callback raising a fatal error if called.
 __attribute__((noreturn))
 void lmc_lexerFatalCallback(LmcRamArray* array, LmcRam a, LmcRam b)
 {
@@ -86,7 +79,7 @@ void sccroll_before(void) {
 // clang-format off
 
 /******************************************************************************
- * Tests unitaires.
+ * Tests
  ******************************************************************************/
 // clang-format on
 
@@ -117,7 +110,7 @@ SCCROLL_TEST(
     yylineno = 42;
     yytext = "foobarbiz";
     LmcLexer lexer = { .callback = lmc_lexerFatalCallback, .desc = "description", };
-    // Si le callback est utilisé, une erreur différente est levée.
+    // If the callback is used, a different error is raised.
     assert(yyerror(&lexer, "message") == EXIT_FAILURE);
 }
 
@@ -128,8 +121,7 @@ SCCROLL_TEST(analysis)
     memcpy(bytes.values, DUMMYCODE, sizeof(LmcRam)*DUMMYCODELEN);
     bytes.max = DUMMYCODELEN;
 
-    // DUMMYCODE contient l'en-tête, mais ce ne sont pas les deux
-    // premiers octets rencontrés.
+    // DUMMYCODE contains the header, but not at the first two bytes.
     bytes.values[0] = (char)START;
     bytes.values[1] = 0x8a;
     LmcLexer lexer = {
