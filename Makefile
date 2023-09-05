@@ -71,7 +71,6 @@ CDEPS		:= $(YDEPS:%.y=$(notdir %.tab.c)) \
 UDEPS		:= $(shell find $(UNITS) -type f -name "*.c")
 
 CC			= gcc
-STD			= gnu99
 CFLAGS		:= $(shell cat compile_flags.txt)
 DFLAGS		= -MMD -MP -MF
 LDLIBS	 	=
