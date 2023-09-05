@@ -1,26 +1,25 @@
 start @ x30
 
 // main
-in    @ x43 // 30 input du dividende
-in    @ x45 // 32 input du diviseur
-load  @ x45 // 34 on charge le diviseur
-brz     x3e // 36 si le diviseur est nul, on stoppe avec erreur
-jump    x42 // 38 si le diviseur n'est pas nul, on lance la division
-out   @ x40 // 3a on affiche le résultat
-stop    x00 // 3c arrêt du programme (code "success")
-stop    x01 // 3e arrêt du programme (code "échec : diviseur nul")
+in    @ x43 // 30 dividend input
+in    @ x45 // 32 divisor input
+load  @ x45 // 34 load the divisor
+brz     x3e // 36 if null, stop with division by 0 error
+jump    x42 // 38 else call function
+out   @ x40 // 3a print the division result
+stop    x00 // 3c shutdown with status 0
+stop    x01 // 3e shutdown with status 1
 
-// Fonction de calcul du quotient.
-// Paramètres:
-// 0x41 résultat
-// 0x43 dividende
-// 0x45 diviseur
-x00     x00 // 40 quotient
-load    x00 // 42 dividende (reste)
-sub     x00 // 44 diviseur
-brn     x3a // 46 diviseur > reste => sortie
-store @ x43 // 48 stockage du reste
-load  @ x40 // 4a quotient +1
-add     x01
-store @ x40
-jump    x42 // 50 goto, fin de fonction
+// @brief Calculate the quotient of an Euclidean division using subtractions
+// @param 0x41 Quotient of the division
+// @param 0x43 Remainder
+// @param 0x45 Divisor
+x00     x00 // 40 variable: quotient
+load    x00 // 42 load the remainder (the argument stores it)
+sub     x00 // 44 subtract the divisor (the argument stores it)
+brn     x3a // 46 if divisor > remainder, return
+store @ x43 // 48 else store back the remainder
+load  @ x40 // 4a load the quotient
+add     x01 // 4c increment the quotient
+store @ x40 // 4e store the quotient new value
+jump    x42 // 50 recurse

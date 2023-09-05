@@ -1,11 +1,12 @@
 /**
  * @file      common.h
  * @version   0.1.0
- * @brief     Structures communes aux tests unitaires.
- * @year      2023
+ * @brief     Common units tests structures.
  * @author    Alexandre Martos
  * @email     contact@amartos.fr
- * @copyright GNU General Public License v3
+ * @copyright 2023 Alexandre Martos <contact@amartos.fr>
+ * @license   GPLv3
+ *
  * @addtogroup UnitsTests
  * @{
  */
@@ -13,17 +14,19 @@
 #ifndef LMC_COMMON_H_
 #define LMC_COMMON_H_
 
-// Librairie personnelle de tests unitaires
+/**
+ * Custom units tests library.
+ * @see https://github.com/amartos/Sccroll
+ */
 #include <sccroll.h>
 
 /**
  * @def MANUALIN
  * @since 0.1.0
- * @brief Programme de test entré via STDIN.
+ * @brief Program manually input through stdin.
  *
- * Il y a un total de 20 instructions.
- * La traduction des codes est la suivante:
- * position 0x30, taille 0x12
+ * 20 instructions in total:
+ * address 0x30, size 0x12
  * out     0x42
  * out     0x23
  * nand    0x00
@@ -49,8 +52,7 @@
 /**
  * @def MANUALOUT
  * @since 0.1.0
- * @brief Output prévu sur STDOUT pour la programmation en temps réel
- * de #MANUALIN.
+ * @brief Expected output for execution of #MANUALIN on stdout.
  */
 #define MANUALOUT                               \
     "? >? >"                                    \
@@ -65,153 +67,106 @@
     "? >? >"
 
 /**
- * @name Chemins des programmes de tests pour l'ordinateur.
+ * @name Programs paths.
  * @{
  */
 
 /**
  * @def PROGS
  * @since 0.1.0
- * @brief Chemin du dossier contenant les programmes de tests.
+ * @brief Programs directory.
  */
 #define PROGS "tests/assets/programs/"
 
 /**
  * @def UNDEFINED
  * @since 0.1.0
- * @brief Programme de test inexistant.
+ * @brief Non-existant program file.
  */
 #define UNDEFINED "foobar"
 
 /**
  * @def _BOOTSTRAP
  * @since 0.1.0
- * @brief Programme compilé du bootstrap.
- * @param ... Insère un préfixe au nom du fichier.
+ * @brief Compiled bootstrap.
+ * @param ... Prefixes for the file name.
  */
 #define _BOOTSTRAP(...) PROGS __VA_ARGS__ "bootstrap"
 
 /**
  * @def BOOTSTRAP
  * @since 0.1.0
- * @brief Programme compilé du bootstrap de base.
+ * @brief Base compiled bootstrap.
  */
 #define BOOTSTRAP _BOOTSTRAP()
 
 /**
  * @def ALTBOOTSTRAP
  * @since 0.1.0
- * @brief Programme compilé d'un bootstrap de tests.
+ * @brief Alternative compiled bootstrap.
  */
 #define ALTBOOTSTRAP _BOOTSTRAP("alt")
 
 /**
  * @def PRODUCT
  * @since 0.1.0
- * @brief Programme calculant le produit de deux entiers.
+ * @brief Compiled program calculating the product of two integers.
  */
 #define PRODUCT PROGS "product"
 
 /**
  * @def QUOTIENT
  * @since 0.1.0
- * @brief Programme calculant le quotient d'une division euclidienne.
+ * @brief Compiled program calculating the quotient of an Euclidean
+ * division.
  */
 #define QUOTIENT PROGS "quotient"
 
 /**
  * @def CMDLINE
  * @since 0.1.0
- * @brief Valeur indiquant d'entrer en mode interactif.
+ * @brief Interactive mode value.
  */
 #define CMDLINE NULL
 
 /**
  * @def MALFORMED
  * @since 0.1.0
- * @brief Programme malformé.
+ * @brief Malformed program.
  */
 #define MALFORMED PROGS "error"
 
 /**
  * @def DUMMY
  * @since 0.1.0
- * @brief Programme ne faisant rien de concrêt.
+ * @brief Program doing nothing.
  *
- * Le code de ce programme implémente quelques syntaxes analysées par
- * le compilateur. Le but est de vérifier que ces syntaxes sont bien
- * prises en compte.
+ * This program implements some syntaxes that should be detected by
+ * the compiler. The goal with this is to check that those are indeed
+ * detected and properly handled.
  */
 #define DUMMY PROGS "dummy"
 
 /**
  * @def DUMMYCODE
  * @since 0.1.0
- * @brief Code compilé attendu pour le programme #DUMMY.
+ * @brief Expected compiled code of #DUMMY.
+ *
+ * The null byte near the end is there on purpose, to ensure that the
+ * whole string is considered, not up to the first null.
  */
 #define DUMMYCODE "\xab\x0e\x20\x23\x40\x53\xd0\xaf\x09\x02\x41\xff\x40\x00\x12\x56"
 
 /**
  * @def DUMMYCODELEN
  * @since 0.1.0
- * @brief Nombre de codes contenus par la chaîne DUMMYCODE.
+ * @brief Bytes length of #DUMMYCODE.
+ *
+ * The +3 correction is due to the x00 byte near the end of
+ * #DUMMYCODE. The premature ending of the string introduces a bias
+ * for the tests.
  */
 #define DUMMYCODELEN (strlen(DUMMYCODE)+3)
-/** @} */
-
-/**
- * @name Simulacres
- *
- * Les simulacres définis ici sont ceux qui ne sont pas encore inclus
- * dans ceux fournis par la librairie Sccroll. À terme ces simulacres
- * y seront transférés (et cette section sera donc supprimée).
- * @{
- */
-
-/**
- * @enum LmcMocks
- * @since 0.1.0
- * @brief Code de déclenchement d'un simulacre donné.
- *
- * Les informations des codes indiquent le nom de la fonction
- * remplacée.
- */
-typedef enum LmcMocks {
-    ERRFSCANF = 1, /**< fscanf */
-    ERRFOPEN,      /**< fopen */
-    ERRFREAD,        /**< fread */
-    ERRFWRITE,       /**< fwrite */
-    ERRHCREATE,      /**< hcreate */
-    ERRHSEARCH,      /**< hsearch */
-} LmcMocks;
-
-/**
- * @struct LmcMockTrigger
- * @since 0.1.0
- * @brief Structure permettant d'indiquer à un simulacre quand entrer
- * en erreur.
- */
-typedef struct LmcMockTrigger {
-    LmcMocks errnum; /**< Code du simulacre à déclencher. */
-    int delay;       /**< Nombre d'appel du simulacre à ignorer. */
-} LmcMockTrigger;
-
-/**
- * @def lmc_mockErr
- * @since 0.1.0
- * @brief Vérifie si le simulacre correspondant à @p name et @p code
- * doit entrer en erreur.
- * @param name Le nom de la fonction.
- * @param code Le code LmcMocks correspondant.
- * @param retval La valeur retournée par @p name en cas d'erreur.
- * @param ... Les arguments pour @p name.
- * @return @p retval en cas de déclenchement du simulacre, sinon la
- * valeur retournée par @p name.
- */
-#define lmc_mockErr(name, code, retval, ...)                            \
-    (code == trigger.errnum && !trigger.delay--)                        \
-    ? retval                                                            \
-    : __real_##name(__VA_ARGS__)
 /** @} */
 
 #endif // LMC_COMMON_H_

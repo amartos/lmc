@@ -1,22 +1,22 @@
 start @ x30
 
-// Les emplacements de stockages de nombres.
-x00     x00  // 30 les deux nombres donnés
-x00     x00  // 32 le résultat
+// variables
+x00     x00  // 30 the input numbers
+x00     x00  // 32 the product
 
 // main
-in    @ x30  // 34 input du premier nombre
-in    @ x31  // 36 input du second nombre
-jump    x3e  // 38 appel de la fonction
-out   @ x32  // 3a sortie et affichage du résultat
-stop    x00  // 3c arrête l'ordi en renvoyant 0
+in    @ x30  // 34 input first number
+in    @ x31  // 36 input second number
+jump    x3e  // 38 function call
+out   @ x32  // 3a exit and print result
+stop    x00  // 3c shutdown with status 0
 
-// Fonction de multiplication.
-load  @ x31  // 3e on charge le second nombre (le compteur)
-brz     x3a  // 40 si le résultat est nul, on arrête
-sub     x01  // 42 on décrémente le compteur
-store @ x31  // 44 on stocke le compteur
-load  @ x32  // 46 on charge le résultat
-add   @ x30  // 48 on ajoute le premier nombre
-store @ x32  // 4a on stocke le nouveau résultat
-jump    x3e  // 4c on recommence la boucle
+// @brief Calculate the product of two numbers via additions
+load  @ x31  // 3e load the second number (used as counter)
+brz     x3a  // 40 if null, return
+sub     x01  // 42 else decrement the counter
+store @ x31  // 44 store the counter
+load  @ x32  // 46 load the previous result
+add   @ x30  // 48 add the first number
+store @ x32  // 4a store the new value
+jump    x3e  // 4c recurse

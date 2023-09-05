@@ -1,4 +1,4 @@
-// commande indirection argument // addresse commande
+// command indirection argument // instruction address
 in     @ x20 // 00
 in     @ x22 // 02
 load   @ x20 // 04

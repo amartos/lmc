@@ -1,12 +1,12 @@
 start x8a
-// test de commentaire 1
+// comment test 1
 add x23
 load @ x53
 jump *@ xaf
 
-in x02 // test commentaire 2
+in x02 // comment test 2
 /*
- * test de commentaire en bloc
+ * comment block test
  */
 
 out @ xff

@@ -1,4 +1,4 @@
-// commande indirection argument // addresse commande
+// command indirection argument // instruction address
 in     @ x20 // 00
 in     @ x22 // 02
 load   @ x20 // 04
@@ -14,6 +14,6 @@ jump     x06 // 16
 x00      x00 // 18
 x00      x00 // 1a
 x00      x00 // 1c
-// Puisque le compilateur n'accepte pas (encore?) des mots en position
-// droite, on efface le "jump" pour son code 0x10.
+// The last instruction (JUMP start) is an rvalue as the position is
+// at the limit of the ROM.
 x00      x10 // 1e
