@@ -1,13 +1,13 @@
 /**
  * @file      lmc.c
  * @version   0.1.0
- * @brief     Fichier source principal de l'ordinateur en papier.
- * @year      2023
+ * @brief     Main file of the LMC computer software.
  * @author    Alexandre Martos
  * @email     contact@amartos.fr
- * @copyright GNU General Public License v3
+ * @copyright 2023 Alexandre Martos <contact@amartos.fr>
+ * @license   GPLv3
  *
- * @addtogroup LMCInternals Structures internes de l'ordinateur en papier.
+ * @addtogroup LMCInternals
  * @{
  */
 
@@ -16,7 +16,7 @@
 // clang-format off
 
 /******************************************************************************
- * @name Analyse de la ligne de commande et documentation.
+ * @name Command line analysis and documentation.
  * @{
  ******************************************************************************/
 // clang-format on
@@ -24,60 +24,61 @@
 /**
  * @struct LmcArguments
  * @since 0.1.0
- * @brief Structure les valeurs des arguments du programme.
+ * @brief Arguments handler structure.
  */
 typedef struct LmcArguments {
-    size_t cur;   /**< Index courant de LmcArguments::files. */
-    size_t max;   /**< Taille max de LmcArguments::files. */
-    char** files; /**< Les chemins de fichiers supplémentaires donnés en arguments. */
-    char* source; /**< Le fichier source du programme. */
-    const char* bootstrap; /**< Le chemin du bootstrap compilé. */
-    bool debug;   /**< Le drapeau indiquant d'allumer ou non le debugger. */
+    size_t cur;   /**< Last free LmcArguments::files index. */
+    size_t max;   /**< Max size of LmcArguments::files. */
+    char** files; /**< Programs file paths. */
+    char* source; /**< Source file of the program to compile. */
+    const char* bootstrap; /**< Compiled bootstrap file path. */
+    bool debug;   /**< Option flag to use the debugger (@c true) or
+                   * not (@c false). */
 } LmcArguments;
 
 /**
  * @var cmdargs
  * @since 0.1.0
- * @brief Les arguments donnés sur la ligne de commande.
+ * @brief Arguments given on the commandline.
  */
 static LmcArguments cmdargs = { .cur = -1, };
 
 /**
  * @enum LmcOptions
  * @since 0.1.0
- * @brief Identifiants des options courtes du programme.
+ * @brief LMC software options.
  */
 typedef enum LmcOptions {
-    LICENSEOPT = 'w', /**< Afficher la licence. */
-    VERSIONOPT = 'v', /**< Afficher la version. */
-    COMPILEOPT = 'c', /**< Compile au lieu d'exécuter. */
-    DEBUGONOPT = 'd', /**< Allume le debugger. */
-    BOOTSTPOPT = 'b', /**< Utiliser un bootstrap personnalisé. */
-    MAXOPT = 0xff,    /**< Nombre maximal d'options. */
+    LICENSEOPT = 'w', /**< Print the license. */
+    VERSIONOPT = 'v', /**< Print the  version. */
+    COMPILEOPT = 'c', /**< Compile a source file instead of running the LMC. */
+    DEBUGONOPT = 'd', /**< Turn on the debugger. */
+    BOOTSTPOPT = 'b', /**< Use a custom bootstrap. */
+    MAXOPT = 0xff,    /**< Max value of options. */
 } LmcOptions;
 
 /**
  * @struc LmcDoc
  * @since 0.1.0
- * @brief Contient les informations pour la documentation du programme.
+ * @brief Handler for documentation.
  */
 typedef struct LmcDoc {
-    const char* const help;             /**< Un template de l'aide du programme et argp-compatible */
-    struct argp_option options[MAXOPT]; /**< Les options du programme. */
-    const char* const argsdesc;         /**< Description des arguments du programme.*/
+    const char* const help;             /**< Argp-compatible help template. */
+    struct argp_option options[MAXOPT]; /**< Argp-compatible options. */
+    const char* const argsdesc;         /**< Arguments descriptions.*/
 } LmcDoc;
 
 /**
  * @def LMC_VERSION
  * @since 0.1.0
- * @brief Texte descriptif de la version du programme.
+ * @brief LMC version number.
  */
 #define LMC_VERSION "LMC (Little Man Computer) version 0.1.0"
 
 /**
  * @def LMC_LICENSE
  * @since 0.1.0
- * @brief Texte descriptif de la licence et copyright.
+ * @brief The LMC copyright and license.
  */
 #define LMC_LICENSE                                                     \
     LMC_VERSION "\n"                                                    \
@@ -90,16 +91,16 @@ typedef struct LmcDoc {
 /**
  * @var lmc_doc
  * @since 0.1.0
- * @brief La documentation du programme.
+ * @brief The LMC documentation and options.
  */
 static LmcDoc lmc_doc = {
     .argsdesc = "[FICHIER...]",
     .options  = {
-        { .name = "license", .group = -1, .arg = NULL, .key = LICENSEOPT, .doc = "Affiche la licence" },
-        { .name = "version", .group = -1, .arg = NULL, .key = VERSIONOPT, .doc = "Affiche la version" },
-        { .name = "compile", .group = 1, .arg = "source", .key = COMPILEOPT, .doc = "Compile une source vers FICHIER" },
-        { .name = "debug",   .group = 1, .arg = NULL,     .key = DEBUGONOPT, .doc = "Allume le debugger" },
-        { .name = "bootstrap", .group = 1, .arg = "FILE", .key = BOOTSTPOPT, .doc = "Le fichier contenant le bootstrap des programmes" },
+        { .name = "license", .group = -1, .arg = NULL, .key = LICENSEOPT, .doc = "Print the licence" },
+        { .name = "version", .group = -1, .arg = NULL, .key = VERSIONOPT, .doc = "Print the version" },
+        { .name = "compile", .group = 1, .arg = "SOURCE", .key = COMPILEOPT, .doc = "Compile SOURCE to FILE" },
+        { .name = "debug",   .group = 1, .arg = NULL,     .key = DEBUGONOPT, .doc = "Use the debugger" },
+        { .name = "bootstrap", .group = 1, .arg = "FILE", .key = BOOTSTPOPT, .doc = "Use a custom compiled bootstrap stored in FILE" },
         { .name = NULL, .group = 0, .arg = NULL, .key = 0, .doc = NULL },
     },
     .help =
@@ -108,10 +109,10 @@ static LmcDoc lmc_doc = {
     "\n"
     "DESCRIPTION:\n"
     "\n"
-    "Simule un ordinateur en exécutant les lignes de code données via la ligne de"
-    "commandes ou inscrites dans les FICHIERs. Une liste de fichiers n'est traitée"
-    "qu'un à la fois; une fois le programme du précédent terminé, le prochain est "
-    "utilisé.\n"
+    "This program emulates a computer based on the von Neumann\n"
+    "architecture. It can be programmed in real-time or using pre-compiled\n"
+    "binaries.\n"
+    "\n"
     ""
     "LICENSE:\n"
     LMC_LICENSE,
@@ -119,18 +120,17 @@ static LmcDoc lmc_doc = {
 
 /**
  * @since 0.1.0
- * @brief Analyse une option de la ligne de commande.
- * @param key La clé LmcOptions d'identification de l'option.
- * @param arg Un argument de l'option.
- * @param state L'état actuel de l'analyse.
- * @return Une valeur non nulle en cas d'erreur, sinon 0.
+ * @brief Parse the command line options.
+ * @param key The option identifier.
+ * @param arg The option argument.
+ * @param state The current parsing state.
+ * @return non-null in case of errors, otherwise @c 0.
  */
 static error_t lmc_parseOpts(int key, char* arg, struct argp_state* state);
 
 /**
  * @since 0.1.0
- * @brief Augmente de 1 la taille de LmcArguments::files.
- * @note Incrémente également LmcArguments::max.
+ * @brief Increment LmcArguments::files size.
  */
 static void lmc_increaseFilesList(void);
 
@@ -138,14 +138,14 @@ static void lmc_increaseFilesList(void);
 
 /******************************************************************************
  * @}
- * @name Nettoyage du module
+ * @name Cleanup
  * @{
  ******************************************************************************/
 // clang-format on
 
 /**
  * @since 0.1.0
- * @brief Effectue un nettoyage des variables du module.
+ * @brief Cleanup the LMC.
  */
 static void lmc_cleanup(void) __attribute__((destructor));
 
@@ -153,7 +153,7 @@ static void lmc_cleanup(void) __attribute__((destructor));
 
 /******************************************************************************
  * @}
- * Implémentation
+ * Implementation
  ******************************************************************************/
 // clang-format on
 
@@ -161,8 +161,6 @@ int main(int argc, char** argv)
 {
     int status = EXIT_SUCCESS;
 
-    // On initialise les options et leur structure d'accueil, et on
-    // analyse la ligne de commande.
     struct argp argp = {
         .options = lmc_doc.options,
         .parser = lmc_parseOpts,
@@ -171,21 +169,17 @@ int main(int argc, char** argv)
     };
     argp_parse(&argp, argc, argv, 0, 0, &cmdargs);
 
-    // On cherche à compiler un programme. L'exécution se fera dans un
-    // second temps, donc on quitte à ce point.
+    // The compile option was given.
     if (cmdargs.source)
         return lmc_compile(cmdargs.source, *cmdargs.files);
 
-    // Les fichiers donnés éventuellement en arguments sont des
-    // programmes censément compilés. On allume l'ordinateur et on
-    // lui donne les programmes. Si aucun fichier n'est donné, on
-    // entre en mode interactif et l'utilisateur pourra taper des
-    // commandes via le prompt.
     LmcExec execfunc = cmdargs.debug ? lmc_shell : lmc_dbgShell;
     for (size_t i = 0; i < cmdargs.max && i <= cmdargs.cur && !status; ++i)
         status = execfunc(cmdargs.bootstrap, cmdargs.files[i]);
 
-    // Le code de status est celui du dernier programme exécuté.
+    // The status code is the last returned value of the programs,
+    // thus the status of the last executed program. The
+    // specifications prevent to return a value greater than 255.
     return status;
 }
 
@@ -211,8 +205,7 @@ static error_t lmc_parseOpts(int key, char* arg, struct argp_state* state)
 
 static void lmc_increaseFilesList(void)
 {
-    // *2 pour limiter les appels à reallocarray (on augmente la
-    // taille de la table de manière exponentielle).
+    // exponential growth to reduce the reallocarray calls.
     int newsize = cmdargs.max ? cmdargs.max * 2 : 1;
     char** new = reallocarray(cmdargs.files, newsize, sizeof(char*));
     if (!new) err(EXIT_FAILURE, "could not allocate for file list");
