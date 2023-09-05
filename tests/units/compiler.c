@@ -1,15 +1,11 @@
 /**
  * @file      compiler.c
  * @version   0.1.0
- * @brief     Tests unitaires du compilateur.
- * @year      2022
+ * @brief     LMC compiler unit tests.
  * @author    Alexandre Martos
  * @email     contact@amartos.fr
- * @copyright GNU General Public License v3
- * @compilation
- * gcc -xc -Wall -std=gnu99 -lsccroll -lgcov \
- *     tests/units/computer.c src/core/computer.c \
- *     -o build/bin/tests/units/computer
+ * @copyright 2022-2023 Alexandre Martos <contact@amartos.fr>
+ * @license   GPLv3
  */
 
 #include "tests/common.h"
@@ -21,11 +17,11 @@
 // clang-format off
 
 /******************************************************************************
- * Préparation
+ * Preparation
  ******************************************************************************/
 // clang-format on
 
-// Informations sur les fichiers à compiler.
+// Information about the files to compile.
 enum {
     product = 0,
     quotient,
@@ -47,7 +43,7 @@ static struct {
     {0},
 };
 
-// Macros d'aide à la définition des tests.
+// Helpers macro for tests definitions
 #define FILES(index)                                                    \
     {                                                                   \
         .path = program_files[index].temp,                              \
@@ -61,14 +57,12 @@ static struct {
     macro(product),                             \
     macro(quotient)
 
-// Modèle des chemins de fichiers compilés.
-// %s: un descripteur unique pour le fichier
+// Compiled files path template.
 static const char* restrict template = "/tmp/%s.lmc.XXXXXX";
 
-// fonction de préparation des données.
-// Cette fonction est en constructor car sccroll_init est lancée
-// *après* la définition des tests, ce qui pose problème lors de la
-// copie des données dans la librairie Sccroll.
+// Prepare the tests data. Called as a constructor as sccroll_init()
+// is called after the tests definition and registration, causing
+// issues for the library handlers.
 __attribute__((constructor))
 void test_prep(void)
 {
@@ -94,10 +88,8 @@ void test_prep(void)
     program_files[dummycode].size = sizeof(char)*DUMMYCODELEN;
 }
 
-// Wrapper pour tests de gestion d'erreurs.
 void lmc_compile_errtests(void) { lmc_compile(PRODUCT LMC_EXT, NULL); }
 
-// Nettoyage du module.
 void sccroll_clean(void)
 {
     for (int i = 0; program_files[i].compiled; ++i) {
@@ -110,7 +102,7 @@ void sccroll_clean(void)
 // clang-format off
 
 /******************************************************************************
- * Tests unitaires.
+ * Tests
  ******************************************************************************/
 // clang-format on
 

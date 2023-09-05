@@ -1,12 +1,11 @@
 /**
  * @file        compiler.h
  * @version     0.1.0
- * @brief       Interface du compilateur.
- * @year        2023
+ * @brief       Compiler interface.
  * @author      Alexandre Martos
  * @email       contact@amartos.fr
- * @copyright   GNU General Public License v3
- * @compilation cf. lmc.h
+ * @copyright   2023 Alexandre Martos <contact@amartos.fr>
+ * @license     GPLv3
  *
  * @addtogroup Compiler
  * @{
@@ -26,37 +25,35 @@
 /**
  * @enum LmcCompileHeader
  * @since 0.1.0
- * @brief Index des éléments d'en-tête d'un fichier compilé.
+ * @brief Programs header structure indexes.
  */
 typedef enum LmcCompileHeader {
-    LMC_STARTPOS = 0, /**< Adresse de départ du programme. */
-    LMC_SIZE,         /**< Taille du programme. */
-    LMC_MAXHEADER,    /**< Taille de l'en-tête. */
+    LMC_STARTPOS = 0, /**< Start address. */
+    LMC_SIZE,         /**< Program size. */
+    LMC_MAXHEADER,    /**< Header max size. */
 } LmcCompileHeader;
 
 /**
  * @def LMC_EXT
  * @since 0.1.0
- * @brief Extension pour les fichiers compilés.
+ * @brief Default extension of programs source files.
  */
 #define LMC_EXT ".lmc"
 
 /**
  * @def LMC_BIN
  * @since 0.1.0
- * @brief Nom du fichier compilé par défaut.
+ * @brief Default compiled file name.
  */
 #define LMC_BIN "lmc.out"
 
 /**
  * @since 0.1.0
- * @brief Compile un fichier source.
- * @param source Le chemin du fichier source à compiler.
- * @param dest Le chemin du fichier de destination. S'il est @c NULL
- * ou identique à @p source, le chemin du fichier @p source est
- * utilisé, mais avec l'extension #LMC_EXT ajoutée.
- * @return une valeur non-nulle en cas d'échec, ou 0 en cas de
- * réussite.
+ * @brief Compile a source file.
+ * @param source The source file path.
+ * @param dest The compiled file path. Defaults to #LMC_BIN if @c NULL
+ * or identical to @p source.
+ * @return non-null in case of errors, otherwise @c 0.
  */
 int lmc_compile(const char* source, const char* dest) __attribute__((nonnull (1)));
 
