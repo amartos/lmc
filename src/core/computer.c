@@ -155,6 +155,28 @@ static void lmc_phaseThree(void);
 // clang-format on
 
 /**
+ * @name Conversion macros
+ * @{
+ * @param v The value to convert.
+ * @return The value of @p v as a string.
+ */
+
+/**
+ * @def _TOSTR
+ * @since 0.1.0
+ * @bried This macro directly converts the given value to a string.
+ */
+#define _TOSTR(v) #v
+
+/**
+ * @def TOSTR
+ * @since 0.1.0
+ * @bried This macro converts the @p v expression result to a string.
+ */
+#define TOSTR(v) _TOSTR(v)
+/** }@ */
+
+/**
  * @def LMC_PROMPT
  * @since 0.1.0
  * @brief The default #lmc_hal::bus::input prompt.
@@ -554,7 +576,7 @@ static bool lmc_setInput(const char* restrict filepath)
 static void lmc_busInput(void)
 {
     bool error = false, eof = false;
-    char digits[BUFSIZ] = { 0 };
+    char digits[BUFSIZ+1] = { 0 };
 
     if (lmc_hal.bus.input == stdin) fprintf(lmc_hal.bus.output, "%s", lmc_hal.bus.prompt);
 
@@ -564,7 +586,7 @@ static void lmc_busInput(void)
     // digit but not the next one; for example if the string "foobar"
     // is given, the "%2x" value would give 0x0f instead of an error.
     eof = lmc_hal.bus.input == stdin
-        ? (fscanf(lmc_hal.bus.input, "%*s", BUFSIZ-1, (char*)digits) < 1
+        ? (fscanf(lmc_hal.bus.input, "%" TOSTR(BUFSIZ) "s", (char*)digits) < 1
            || (error = lmc_convert(digits)))
         : fread(&lmc_hal.bus.buffer, sizeof(LmcRam), 1, lmc_hal.bus.input) < 1;
 
