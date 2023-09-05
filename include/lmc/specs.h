@@ -1,14 +1,13 @@
 /**
  * @file      specs.h
  * @version   0.1.0
- * @brief     Spécifications générales de l'ordinateur en papier.
- * @year      2023
+ * @brief     LMC specifications.
  * @author    Alexandre Martos
- * @email     alexandre.martos (at) protonmail.ch
- * @copyright GNU General Public License v3
- * @compilation cf. lmc.h
+ * @email     contact@amartos.fr
+ * @copyright 2023 Alexandre Martos <contact@amartos.fr>
+ * @license   GPLv3
  *
- * @addtogroup Specs Spécifications de l'ordinateur en papier
+ * @addtogroup Specs LMC computer specifications
  * @{
  */
 
@@ -20,7 +19,7 @@
 // clang-format off
 
 /******************************************************************************
- * @name Types et valeurs pour la mémoire
+ * @name Memory types
  * @{
  ******************************************************************************/
 // clang-format on
@@ -28,29 +27,29 @@
 /**
  * @typedef LmcRam
  * @since 0.1.0
- * @brief Type de donnée pour les adresses de la mémoire.
+ * @brief Memory data type.
  */
-// char est déjà non signé, mais on appuie le fait, ici.
+// yes, char is already unsigned, but this is to insist on the fact.
 typedef unsigned char LmcRam;
 
 /**
  * @enum LmcMemoryCaracs
  * @since 0.1.0
- * @brief Caractéristiques numériques de la mémoire de l'ordinateur.
+ * @brief Numerical constants of the LMC.
  */
 typedef enum LmcMemoryCaracs {
-    LMC_MAXRAM    = 0x100,              /**< Quantité de mémoire maximale (octets). */
-    LMC_MAXROM    = 0x20,               /**< Quantité de mémoire en lecture seule (octets). */
-    LMC_MAXDIGITS = sizeof(LmcRam) * 2, /**< Nombre de chiffres des valeurs de la mémoire. */
-    LMC_MEMCOL    = 0x0f,               /**< Nombre d'adresses par ligne de dump. */
-    LMC_SIGN      = LMC_MAXRAM >> 1,    /**< Masque pour le bit de signe. */
+    LMC_MAXRAM    = 0x100,              /**< Max RAM size (bytes). */
+    LMC_MAXROM    = 0x20,               /**< Max ROM size (bytes). */
+    LMC_MAXDIGITS = sizeof(LmcRam) * 2, /**< Max digits for the memory values. */
+    LMC_MEMCOL    = 0x0f,               /**< Max number of addresses per line for the dumps. */
+    LMC_SIGN      = LMC_MAXRAM >> 1,    /**< Sign bit mask. */
 } LmcMemoryCaracs;
 
 // clang-format off
 
 /******************************************************************************
  * @}
- * @name Structures et macros utilitaires
+ * @name Messages formatting
  * @{
  ******************************************************************************/
 // clang-format on
@@ -58,8 +57,9 @@ typedef enum LmcMemoryCaracs {
 /**
  * @def LMC_HEXFMT
  * @since 0.1.0
- * @brief Le format utilisé pour les nombres hexadécimaux affichés.
- * @param * LMC_MAXDIGITS
+ * @brief Hexadecimal numbers format string.
+ * @param * #LMC_MAXDIGITS
+ * @param x The value to print in hexadecimal.
  */
 #define LMC_HEXFMT "%0*x"
 
@@ -67,7 +67,7 @@ typedef enum LmcMemoryCaracs {
 
 /******************************************************************************
  * @}
- * @name Programmation de l'ordinateur.
+ * @name LMC language.
  * @{
  ******************************************************************************/
 // clang-format on
@@ -75,54 +75,57 @@ typedef enum LmcMemoryCaracs {
 /**
  * @enum LmcOpCodes
  * @since 0.1.0
- * @brief Les codes opératoires de l'ordinateur en papier.
+ * @brief The LMC operation codes.
+ *
+ * The PC acronym used in the structure documentation corresponds to
+ * the Program Counter.
  */
 typedef enum __attribute__((__packed__)) LmcOpCodes {
     // Primitives
-    INV = 1 << 0, /**< Inverse la valeur/signification. */
-    NOT = 1 << 1, /**< Donne le NON booléen de la valeur. */
-    HLT = 1 << 2, /**< Éteint l'ordinateur jusqu'au prochain programme. */
-    WRT = 1 << 3, /**< Écrit une valeur en mémoire. */
-    JMP = 1 << 4, /**< Change l'emplacement mémoire courant. */
+    INV = 1 << 0, /**< Invert the value/signification. */
+    NOT = 1 << 1, /**< Boolean NOT. */
+    HLT = 1 << 2, /**< Stop the current program. */
+    WRT = 1 << 3, /**< Write. */
+    JMP = 1 << 4, /**< Jump. */
     ADD = 1 << 5, /**< Addition. */
-    VAR = 1 << 6, /**< La valeur est une adresse de la mémoire. */
-    PTR = 1 << 7, /**< La valeur est un pointeur. */
+    VAR = 1 << 6, /**< The given value is a variable. */
+    PTR = 1 << 7, /**< The given value is a pointer. */
 
-    // Combinaisons
-    INDIR = VAR | PTR, /**< Déréférence un pointeur. */
+    // Combinations
+    INDIR = VAR | PTR, /**< Pointer dereferencing. */
 
     // Instructions
-    // les !WRT sont inutiles ici, mais sont laissés pour montrer la
-    // correspondant de la valeur.
-    SUB   = ADD | INV,  /**< Opération de soustraction. */
-    NAND  = ADD | NOT,  /**< Opération booléenne NON ET. */
-    LOAD  = !WRT,       /**< Charge une valeur dans l'accumulateur. */
-    STORE = WRT,        /**< Stocke une valeur en mémoire. */
-    IN    = WRT | INV,  /**< Enregistre une valeur venant de l'utilisateur. */
-    OUT   = !WRT | INV, /**< Affiche une valeur sur le tampon de sortie. */
-    JUMP  = JMP,        /**< Saute vers une adresse (alias de #JMP).*/
-    BRN   = JMP | INV,  /**< Saute si l'accumulateur est négatif. */
-    BRZ   = JMP | NOT,  /**< Saute si l'accumulateur est nul.*/
-    START = PTR,        /**< Indique une adresse de démarrage. */
+    // The !WRT are indeed useless, but used anyway to indicate the
+    // corresponding combination of primitives.
+    SUB   = ADD | INV,  /**< Substraction. */
+    NAND  = ADD | NOT,  /**< Boolean NOT(AND). */
+    LOAD  = !WRT,       /**< Read a value. */
+    STORE = WRT,        /**< Store a value. */
+    IN    = WRT | INV,  /**< Input from the bus input. */
+    OUT   = !WRT | INV, /**< Output to the bus output. */
+    JUMP  = JMP,        /**< Set the PC to the given address ("jump to").*/
+    BRN   = JMP | INV,  /**< JUMP but only if the accumulator is less than @c 0. */
+    BRZ   = JMP | NOT,  /**< JUMP but only if the accumulator is equal to @c 0. */
+    START = PTR,        /**< The value is a start address. */
 
-    // Instructions spécifiques au debugger.
-    DEBUG = HLT   | INV, /**< Allumer/éteindre le debugger (selon l'argument). */
-    DUMP  = DEBUG | NOT, /**< Afficher toute la mémoire entre deux adresses. */
-    BREAK = DEBUG | WRT, /**< Enregistrer un point d'arrêt. */
-    FREE  = BREAK | NOT, /**< Libérer un point d'arrêt. */
-    CONT  = DEBUG | JMP, /**< Continuer jusqu'au prochain point d'arrêt. */
-    NEXT  = CONT  | NOT, /**< Exécuter la prochaine instruction et s'arrêter. */
-    // PRINT utilise ADD et non OUT car la valeur OUT vaut "0|INV", ce
-    // qui signifierait que PRINT équivaudrait à DEBUG... ce qui
-    // poserait un problème.
-    PRINT = DEBUG | ADD, /**< Afficher le contenu d'une adresse à chaque étape. */
-    CLEAR = PRINT | NOT, /**< Arrêter d'afficher le contenu d'une adresse. */
+    // Debugger instructions.
+    DEBUG = HLT   | INV, /**< Step in the debugger depending on the argument. */
+    DUMP  = DEBUG | NOT, /**< Dump the memory between two given addresses. */
+    BREAK = DEBUG | WRT, /**< Store a breakpoint. */
+    FREE  = BREAK | NOT, /**< Free the breakpoints. */
+    CONT  = DEBUG | JMP, /**< Skip the debug step until the PC is at the given address. */
+    NEXT  = CONT  | NOT, /**< Execute the next program instruction and step in the debugger. */
+    // PRINT uses ADD instead of OUT because OUT is "0|INV", which
+    // would mean that PRINT would be equal to DEBUG, and would make
+    // it impossible to distinguish the two.
+    PRINT = DEBUG | ADD, /**< Print the given address value each time PC goes through it. */
+    CLEAR = PRINT | NOT, /**< Stop printing memory values. */
 } LmcOpCodes;
 
 /**
  * @def LMC_PROGLANG
  * @since 0.1.0
- * @brief Macro de conversion opcode <-> chaîne de caractères.
+ * @brief Opcode <> keywords conversion macro.
  */
 #define LMC_PROGLANG(macro)                     \
     macro(VAR,"@")                              \
