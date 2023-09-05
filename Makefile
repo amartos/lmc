@@ -55,6 +55,7 @@ vpath %.c    $(CPPTREE)
 vpath %.log  $(LOGS)
 vpath %.y    $(SRCTREE)
 vpath %.l    $(SRCTREE)
+vpath %.gcno $(BUILD)
 
 
 ###############################################################################
