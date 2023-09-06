@@ -1,0 +1,374 @@
+#+title: LMC - A Little Man computer implementation in C
+#+author: Alexandre Martos
+
+A Little Man Computer is an emulator of a von Neumann architecture,
+and created by Stuart Madnick in 1965 [fn:wiki]. There are countless
+implementations out there, and this is yet another one.
+
+[fn:wiki]: https://en.wikipedia.org/wiki/Little_man_computer
+
+The LMC of this repo is written in C. It follows the von Neumann
+architecture, and implement some additional features for their
+usefulness or for fun.
+
+* Install
+
+** Dependencies
+
+The software, by itself, only depends on the standard C library, =flex=
+and =bison=. If you want to run the tests, both =gcovr= and the [[https://github.com/amartos/Sccroll][Sccroll]]
+library are needed. The Makefile, besides =make,= depends on =rsync=.
+
+Here is the list of commands to install all of these on Debian-based
+systems:
+
+#+begin_src bash
+  sudo apt install -y git rsync flex bison gcovr
+  git clone https://github.com/amartos/Sccroll
+  make -C Sccroll install
+#+end_src
+
+** Install
+
+Download the repo using either Github =code > download zip= button or by
+cloning it:
+
+#+begin_src bash
+  git clone https://github.com/amartos/lmc
+#+end_src
+
+Once [[Dependencies][dependencies]] are installed, you can then compile by running
+=make=. The binary will be located at =./build/bin/lmc=.
+
+Instead, you can install the software directly using =make install=. The
+default prefix is at =~/.local/=, but you can edit the Makefile to
+change it.
+
+* Usage
+
+** Command-line documentation
+
+#+begin_src bash :eval yes :results output replace :exports both
+  ./build/bin/lmc --help
+#+end_src
+
+#+RESULTS:
+#+begin_example
+Usage: lmc [OPTION...] [FILE...]
+
+LMC (Little Man Computer) version 0.1.0
+
+DESCRIPTION:
+
+This program emulates a computer based on the von Neumann
+architecture. It can be programmed in real-time or using pre-compiled
+binaries.
+
+For more details, see the README file provided with the software.
+
+OPTIONS:
+
+  -b, --bootstrap=BOOTFILE   Use a custom compiled bootstrap stored in
+                             BOOTFILE
+  -c, --compile=SOURCE       Compile SOURCE to FILE
+  -d, --debug                Use the debugger
+  -?, --help                 Give this help list
+      --usage                Give a short usage message
+  -v, --version              Print the version
+  -w, --license              Print the licence
+
+Mandatory or optional arguments to long options are also mandatory or optional
+for any corresponding short options.
+
+LICENSE:
+
+LMC (Little Man Computer) version 0.1.0
+Copyright (C) 2023 Alexandre Martos - contact@amartos.fr
+
+License GPLv3
+
+This program comes with ABSOLUTELY NO WARRANTY.
+This is free software, and you are welcome to redistribute it
+under certain conditions; see <https://www.gnu.org/licenses/> for details.
+#+end_example
+
+** Specifications
+
+
+The emulator has the following specifications:
+
+- each memory slot is a 1 byte unsigned integer (max value =0xff=)
+- memory of 256 bytes, of which 32 bytes as ROM + 3 additional bytes
+  in RAM are reserved for the bootstrap
+- 1 byte of buffer for the BUS
+- 2 bytes of buffer for the debugger, one for the breakpoint and one
+  for the address of the memory slot to print
+- all integers for input, storage and output are unsigned
+- all output is done in hexadecimal, input can be decimal or
+  hexadecimal
+- only one source file can be compiled at once
+- there is no limit on the number of programs to run given on the
+  command line, besides the size of your computer's RAM
+
+** The LMC language
+
+In the following table:
+
+- =argument= is the instruction argument, which may represent a raw
+  value or an address in memory (for indirection). The value used by
+  the program is the value obtained after all indirections have been
+  resolved. Each valid instruction takes 1 argument, except for =dump=
+  that takes or 2 (start and end addresses of the dump)
+- the =raw= column is the instruction bytecode that uses the argument
+  raw value
+- the =var= column is the instruction bytecode that uses the argument as
+  an address of a value in memory (a variable)
+- the =ptr= column is the instruction bytecode that uses the argument as
+  an address of an address of a value in memory (a pointer)
+- =N/A= means Not Applicable, i.e. the instruction code is meaningless
+  by itself
+- the keywords are the instruction keywords to use as l-values in
+  source files, except for the indirection instructions which are
+  located between an instruction keyword (or bytecode) and its
+  argument
+
+| keyword  | type        |  raw |  var |  ptr | translation                                           |
+|----------+-------------+------+------+------+-------------------------------------------------------|
+| @        | indirection |  N/A |  N/A |  N/A | the argument is a variable                            |
+| *@       | indirection |  N/A |  N/A |  N/A | the argument is a pointer                             |
+| add      | LMC         | 0x20 | 0x60 | 0xe0 | add argument to the accumulator                       |
+| sub      | LMC         | 0x21 | 0x61 | 0xe1 | subtract argument from the accumulator                |
+| nand     | LMC         | 0x22 | 0x62 | 0xe2 | NAND argument and accumulator                         |
+| load     | LMC         | 0x00 | 0x40 | 0xc0 | load argument in the accumulator                      |
+| store    | LMC         | 0x08 | 0x48 | 0xc8 | store the accumulator value in argument               |
+| in       | LMC         | 0x09 | 0x49 | 0xc9 | wait for user input and store in argument             |
+| out      | LMC         | 0x01 | 0x41 | 0xc1 | output argument                                       |
+| jump     | LMC         | 0x10 | 0x50 | 0xd0 | jump to argument                                      |
+| brn      | LMC         | 0x11 | 0x51 | 0xd1 | jump to argument if the accumulator is null           |
+| brz      | LMC         | 0x12 | 0x52 | 0xd2 | jump to argument if the accumulator is negative       |
+| stop     | LMC         | 0x04 | 0x44 | 0xc4 | stop the program with argument as status code         |
+| start    | compiler    | 0x80 | 0xc0 |  N/A | set the start position of the program                 |
+| debug    | debugger    | 0x05 | 0x45 | 0xc5 | turn on/off the debugger (on if argument is non null) |
+| break    | debugger    | 0x0d | 0x4d | 0xcd | pause the program at argument (a breakpoint)          |
+| free     | debugger    | 0x0f | 0x4f | 0xcf | remove the current breakpoint                         |
+| continue | debugger    | 0x15 | 0x55 | 0xd5 | continue the program up to the next breakpoint        |
+| next     | debugger    | 0x17 | 0x57 | 0xd7 | continue the program up to the next instruction       |
+| print    | debugger    | 0x25 | 0x65 | 0xe5 | print the value at argument at each passage           |
+| dump     | debugger    | 0x07 | 0x47 | 0xc7 | dump the memory between start and end arguments       |
+
+** Real-time programming
+
+When you execute the =lmc= without any arguments, the software will
+enter in interactive mode. It will prompt you first for the program
+start address and total size, then for each byte value of the
+program. Once the total number of bytes is reached, the program is
+directly executed.
+
+Each instruction and argument must be entered as an integer, in
+decimal or hexadecimal base (use the C format for integers to
+distinguish both). No keyword is recognized in this mode (this feature
+might be added in the future). Three bytecodes exist for each
+instruction, depending on the indirection level for the instruction
+argument.
+
+See the [[The LMC language][LMC language]] section for the list of instructions and their
+corresponding bytecodes.
+
+** Storing programs in source files
+
+Writing programs in real time is prone to errors, and is quite
+cumbersome --- especially about remembering the instruction
+bytecodes.
+
+This LMC features a compiler that makes writing its programs easier.
+
+**** Syntax
+
+Each instruction of the program is set on its own line. The
+instruction is the l-value and can either be a case-insensitive
+keyword or a positive integer (decimal or hexadecimal, but
+do not use a sign). See the [[The LMC language][LMC language]] section for a list of
+available keywords and corresponding bytecodes.
+
+The instruction is then optionally followed by a positive integer
+(decimal or hexadecimal, still no sign) used as its argument (the
+r-value). If omitted, the argument defaults to =0=.
+
+This value is used as is, except if its preceded by an indirection
+modifier (ibid, see the LMC language section), in which case it is
+used as an address in memory --- the level of indirection, as a
+variable or a pointer, depends on the specified modifier. The =start=
+keyword is special in this case, see the [[Compilation]] section for
+details.
+
+Note that, although any integer value is accepted in source (for
+instructions or arguments), the final value is the modulo of the given
+integer against the maximum value one memory slot can store (see the
+[[Specifications]]).
+
+For hexadecimal integers, the basic notation is the same as in C,
+i.e. =0xff=. The =x= *must* be lowercase, but the leading =0= is optional (=xff=
+is valid).
+
+Comments as =/* C-style multiline blocks */= or =// C++-style= are
+ignored, as well as =# python styled= and =; lisp styled= comments.
+
+**** The program start address
+
+The program start address specification can be omitted, as a sane
+default value is provided by the compiler. You can override this
+default by using the =start= instruction.
+
+If the indirection modifier is omitted for the =start= instruction
+argument, the given value is a relative address to the default
+value. If the indirection modifier is =@=, the argument is an absolute
+address in memory, meaning that the compiled program must start at
+precisely the given address. The =start= instruction argument does not
+use the =*@= indirection modifier.
+
+Multiple =start= instructions in a single program overwrite (or cumulate
+with, for relative addresses) each other, so be careful when writing
+programs with it.
+
+**** The program size
+
+The program size is automatically calculated at compile-time. No
+instruction is provided to override this value.
+
+This allows you to split your source into multiple modules. Ensure to
+concatenate all your modules in a single file at compile time, as the
+LMC can compile only one file at once.
+
+**** Compilation
+
+To compile a source file, pass the option =--compile SOURCE= to the LMC
+software:
+
+#+begin_example bash
+lmc --compile my/source/path.lmc [my/destination/compiled/program]
+#+end_example
+
+If the destination file is omitted, the compiled program will be
+written in the =./lmc.out= file.
+
+**** Executing compiled programs
+
+The compiled programs can be executed by passing them directly to the
+LMC software as a list of command line arguments:
+
+#+begin_example bash
+lmc my/compiled/program [my/other/compiled/program ...]
+#+end_example
+
+Each given binary file is executed sequentially and independently of
+each other (the LMC is reset at each new program executed). In case of
+file reading errors, the LMC falls back to interactive mode to let you
+decide what to do.
+
+The execution of a compiled program does not differ from the execution
+of a program manually entered in interactive mode.
+
+**** Examples
+
+***** Integers product
+
+#+begin_example
+start @ x30  // start at address 0x30
+
+// variables
+x00     x00  // 30 the input numbers
+x00     x00  // 32 the product
+
+// main
+in    @ x30  // 34 input first number
+in    @ x31  // 36 input second number
+jump    x3e  // 38 function call
+out   @ x32  // 3a exit and print result
+stop    x00  // 3c shutdown with status 0
+
+// @brief Calculate the product of two numbers via additions
+load  @ x31  // 3e load the second number (used as counter)
+brz     x3a  // 40 if null, return
+sub     x01  // 42 else decrement the counter
+store @ x31  // 44 store the counter
+load  @ x32  // 46 load the previous result
+add   @ x30  // 48 add the first number
+store @ x32  // 4a store the new value
+jump    x3e  // 4c recurse
+#+end_example
+
+***** Euclidean division
+
+#+begin_example
+START @ x30
+
+// main
+IN    @ x43 // 30 dividend input
+IN    @ x45 // 32 divisor input
+LOAD  @ x45 // 34 load the divisor
+BRZ     x3e // 36 if null, stop with division by 0 error
+JUMP    x42 // 38 else call function
+OUT   @ x40 // 3a print the division result
+STOP    x00 // 3c shutdown with status 0
+STOP    x01 // 3e shutdown with status 1
+
+// @brief Calculate the quotient of an Euclidean division using subtractions
+// @param 0x41 Quotient of the division
+// @param 0x43 Remainder
+// @param 0x45 Divisor
+x00     x00 // 40 variable: quotient
+LOAD    x00 // 42 load the remainder (the argument stores it)
+SUB     x00 // 44 subtract the divisor (the argument stores it)
+BRN     x3a // 46 if divisor > remainder, return
+STORE @ x43 // 48 else store back the remainder
+LOAD  @ x40 // 4a load the quotient
+ADD     x01 // 4c increment the quotient
+STORE @ x40 // 4e store the quotient new value
+JUMP    x42 // 50 recurse
+#+end_example
+
+** The programs debugger
+
+The LMC includes a debugger. There are two ways to activate it:
+
+- pass the =--debug= flag to the LMC at the command-line level:
+
+#+begin_example bash
+lmc --debug [my/compiled/program ...]
+#+end_example
+
+- use the =debug= instruction in a source file, or the corresponding
+  bytecode in interactive mode, with a non-zero argument
+
+Both will activate it immediately (the command-line argument starts
+it even before the bootstrap).
+
+The debugger instructions described in the [[The LMC language][language section]] have an
+effect only in this mode. You can use any "normal" instruction in
+addition to these.
+
+You can instruct the debugger from the source file, but those won't
+have any effect if the debugger is off. Turning on the debugger will
+make the program enter in debug-interactive mode in any case, and the
+source instructions would be executed without instructing the debugger
+to do so.
+
+To exit this mode, use the =debug= instruction with a null value as
+argument.
+
+** Customizing the bootstrap
+
+The LMC uses a default bootstrap (provided by the ), but provides an
+option to replace it:
+
+#+begin_example bash
+lmc --bootstrap my/compiled/bootstrap [my/programs ...]
+#+end_example
+
+The given bootstrap file is a compiled binary, written as described by
+the [[Storing programs in source files]] section.
+
+The only differences with any other program written for the LMC are:
+
+- any =start= instruction in the bootstrap program is ignored
+- a fatal error is raised if the bootstrap size is larger than the ROM
