@@ -429,14 +429,27 @@ static LmcRam lmc_exec(const char* restrict bootstrap, const char* restrict file
 static void lmc_bootstrap(const char* restrict path)
 {
     FILE* file = fopen(path, "rb");
+    size_t size = LMC_MAXROM;
+
     // As the bootstrap is itself compiled using the LMC compiler, the
-    // first two values are the start position and the size. But both
-    // are already known at compile time (start 0, size MAX_ROM even
-    // if the bootstrap is smaller). Thus, the first two bytecodes are
-    // skipped.
+    // first two values are the start position and the size. The first
+    // is ignored, and the second is checked before loading the
+    // bootstrap in memory (in case the given bootstrap is larger than
+    // the ROM).
     if (!file
-        || fseek(file, sizeof(LmcRam)*2, SEEK_SET)
-        || (!fread(lmc_hal.mem.ram, sizeof(LmcRam), LMC_MAXROM, file) && ferror(file)))
+        || fseek(file, sizeof(LmcRam), SEEK_SET)
+        || (!fread(&size, sizeof(LmcRam), 1, file) && ferror(file)))
+        err(EXIT_FAILURE, "%s: could not load bootstrap", path);
+    else if (size > LMC_MAXROM) {
+        errno = EFBIG;
+        err(
+            EXIT_FAILURE,
+            "The bootstrap size (%lu bytes) is larger than the ROM (%i bytes)",
+            size, LMC_MAXROM
+        );
+    }
+
+    if (fread(lmc_hal.mem.ram, sizeof(LmcRam), LMC_MAXROM, file) && ferror(file))
         err(EXIT_FAILURE, "%s: could not load bootstrap", path);
     fclose(file);
 }

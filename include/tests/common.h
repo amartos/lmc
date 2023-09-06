@@ -108,6 +108,13 @@
 #define ALTBOOTSTRAP _BOOTSTRAP("alt")
 
 /**
+ * @def BIGBOOTSTRAP
+ * @since 0.1.0
+ * @brief Bootstrap program, but bigger than ROM.
+ */
+#define BIGBOOTSTRAP _BOOTSTRAP("big")
+
+/**
  * @def PRODUCT
  * @since 0.1.0
  * @brief Compiled program calculating the product of two integers.

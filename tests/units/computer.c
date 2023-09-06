@@ -232,3 +232,17 @@ SCCROLL_TEST(
     }
 )
 { assert(!lmc_shell(ALTBOOTSTRAP, NULL)); }
+
+SCCROLL_TEST(
+    bigbootstrap,
+    .code = {
+        .type  = SCCSTATUS,
+        .value = EXIT_FAILURE,
+    },
+    .std = {
+        [STDERR_FILENO] = { .content.blob =
+            "computer: The bootstrap size (56 bytes) is larger than the ROM (32 bytes): File too large"
+        },
+    }
+)
+{ assert(!lmc_shell(BIGBOOTSTRAP, NULL)); }
