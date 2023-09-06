@@ -83,7 +83,9 @@ typedef struct LmcDoc {
 #define LMC_LICENSE                                                     \
     LMC_VERSION "\n"                                                    \
     "Copyright (C) 2023 Alexandre Martos - contact@amartos.fr\n"        \
-    "License GPLv3:\n"                                                  \
+    "\n"                                                                \
+    "License GPLv3\n"                                                   \
+    "\n"                                                                \
     "This program comes with ABSOLUTELY NO WARRANTY.\n"                 \
     "This is free software, and you are welcome to redistribute it\n"   \
     "under certain conditions; see <https://www.gnu.org/licenses/> for details."
@@ -105,7 +107,7 @@ static LmcDoc lmc_doc = {
     },
     .help =
     "\n"
-    LMC_VERSION
+    LMC_VERSION "\n"
     "\n"
     "DESCRIPTION:\n"
     "\n"
@@ -113,8 +115,10 @@ static LmcDoc lmc_doc = {
     "architecture. It can be programmed in real-time or using pre-compiled\n"
     "binaries.\n"
     "\n"
+    "OPTIONS:\n"
     ""
     "LICENSE:\n"
+    "\n"
     LMC_LICENSE,
 };
 
