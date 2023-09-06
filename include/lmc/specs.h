@@ -43,6 +43,7 @@ typedef enum LmcMemoryCaracs {
     LMC_MAXDIGITS = sizeof(LmcRam) * 2, /**< Max digits for the memory values. */
     LMC_MEMCOL    = 0x0f,               /**< Max number of addresses per line for the dumps. */
     LMC_SIGN      = LMC_MAXRAM >> 1,    /**< Sign bit mask. */
+    LMC_MAXVAL    = LMC_MAXRAM,         /**< Max value for each memory slot. */
 } LmcMemoryCaracs;
 
 // clang-format off

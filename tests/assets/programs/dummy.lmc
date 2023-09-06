@@ -1,7 +1,7 @@
 start x8a
 // comment test 1
 add x23
-LOAD @ x53
+LOAD @ xffffffffffff53 // more than the RAM size can handle
 jump *@ xaf
 
 in x02 // comment test 2
@@ -17,4 +17,4 @@ foo
 
           */
 load @
-brz x56
+brz 342 // 342 % 256 == 86 == 0x56

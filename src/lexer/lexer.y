@@ -56,11 +56,11 @@ keyword:
                 $$ = lmc_opcode($1) | lmc_opcode($2);
                 free($1), free($2);
     }
-|             VALUE { $$ = $1; }
+|             VALUE { $$ = $1 % LMC_MAXVAL; }
 ;
 
 arg:
-              VALUE { $$ = $1; }
+              VALUE { $$ = $1 % LMC_MAXVAL; }
 |               EOL { $$ = 0; }
 ;
 
