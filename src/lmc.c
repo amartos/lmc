@@ -94,7 +94,7 @@ typedef struct LmcDoc {
  * @brief The LMC documentation and options.
  */
 static LmcDoc lmc_doc = {
-    .argsdesc = "[FICHIER...]",
+    .argsdesc = "[FILE...]",
     .options  = {
         { .name = "license", .group = -1, .arg = NULL, .key = LICENSEOPT, .doc = "Print the licence" },
         { .name = "version", .group = -1, .arg = NULL, .key = VERSIONOPT, .doc = "Print the version" },
