@@ -358,8 +358,8 @@ argument.
 
 ** Customizing the bootstrap
 
-The LMC uses a default bootstrap (provided by the ), but provides an
-option to replace it:
+The LMC uses a default bootstrap, but provides an option to replace
+it:
 
 #+begin_example bash
 lmc --bootstrap my/compiled/bootstrap [my/programs ...]
