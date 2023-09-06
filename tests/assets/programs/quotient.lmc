@@ -1,25 +1,25 @@
-start @ x30
+START @ x30
 
 // main
-in    @ x43 // 30 dividend input
-in    @ x45 // 32 divisor input
-load  @ x45 // 34 load the divisor
-brz     x3e // 36 if null, stop with division by 0 error
-jump    x42 // 38 else call function
-out   @ x40 // 3a print the division result
-stop    x00 // 3c shutdown with status 0
-stop    x01 // 3e shutdown with status 1
+IN    @ x43 // 30 dividend input
+IN    @ x45 // 32 divisor input
+LOAD  @ x45 // 34 load the divisor
+BRZ     x3e // 36 if null, stop with division by 0 error
+JUMP    x42 // 38 else call function
+OUT   @ x40 // 3a print the division result
+STOP    x00 // 3c shutdown with status 0
+STOP    x01 // 3e shutdown with status 1
 
 // @brief Calculate the quotient of an Euclidean division using subtractions
 // @param 0x41 Quotient of the division
 // @param 0x43 Remainder
 // @param 0x45 Divisor
 x00     x00 // 40 variable: quotient
-load    x00 // 42 load the remainder (the argument stores it)
-sub     x00 // 44 subtract the divisor (the argument stores it)
-brn     x3a // 46 if divisor > remainder, return
-store @ x43 // 48 else store back the remainder
-load  @ x40 // 4a load the quotient
-add     x01 // 4c increment the quotient
-store @ x40 // 4e store the quotient new value
-jump    x42 // 50 recurse
+LOAD    x00 // 42 load the remainder (the argument stores it)
+SUB     x00 // 44 subtract the divisor (the argument stores it)
+BRN     x3a // 46 if divisor > remainder, return
+STORE @ x43 // 48 else store back the remainder
+LOAD  @ x40 // 4a load the quotient
+ADD     x01 // 4c increment the quotient
+STORE @ x40 // 4e store the quotient new value
+JUMP    x42 // 50 recurse

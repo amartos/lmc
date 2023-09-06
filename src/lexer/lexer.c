@@ -44,6 +44,14 @@ void hdestroy(void) __attribute__((destructor));
  */
 #define LMC_LEXERSWITCH(opcode,string) case opcode: return string;
 
+/**
+ * @since 0.1.0
+ * @brief Convert a string to lowercase.
+ * @param string The string to convert.
+ * @return A malloc'ed copy of @p string converted to lowercase.
+ */
+char* lmc_strtolower(const char* restrict string) __attribute__((nonnull));
+
 // clang-format off
 
 /******************************************************************************
@@ -83,7 +91,7 @@ static void lmc_hcreate(void)
 
 LmcOpCodes lmc_opcode(char* keyword)
 {
-    ENTRY entry = { .key = keyword, };
+    ENTRY entry = { .key = lmc_strtolower(keyword), };
     ENTRY* retval = NULL;
     LmcOpCodes value = 0;
     if (*keyword && !(retval = hsearch(entry, FIND)))
@@ -93,7 +101,19 @@ LmcOpCodes lmc_opcode(char* keyword)
         // handles the truncation. No sign issue is expected as the
         // operations bytecodes are all unsigned.
         value = (size_t)(retval->data);
+    free(entry.key);
     return value;
+}
+
+char* lmc_strtolower(const char* restrict string)
+{
+    char* copy = strdup(string);
+    char* current = copy;
+    while(*current) {
+        *current = tolower(*current);
+        ++current;
+    }
+    return copy;
 }
 
 void lmc_append(LmcRamArray* array, LmcRam code, LmcRam value)

@@ -1,7 +1,7 @@
 start x8a
 // comment test 1
 add x23
-load @ x53
+LOAD @ x53
 jump *@ xaf
 
 in x02 // comment test 2
