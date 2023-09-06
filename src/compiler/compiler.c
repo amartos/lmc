@@ -46,12 +46,14 @@ int lmc_compile(const char* source, const char* dest)
     int status = 0;
     const char* output = dest && *dest ? dest : LMC_BIN;
 
-    // Init the start position at LMC_MAXROM+1 as it is the first
+    // Init the start position at LMC_MAXROM+3 as it is the first
     // writable memory slot after the last bootstrap JUMP instruction
-    // argument slot (thus in RAM, but loosely considered part of
-    // ROM). This is a default value that can be changed in the source
-    // of the compiled program.
-    LmcRam array[LMC_MAXRAM] = { [LMC_STARTPOS] = LMC_MAXROM + 1 };
+    // argument slot and the two slots used for calculation of the
+    // remaining bytes to load (thus in RAM, but loosely considered
+    // part of ROM). This is a default value tied to the default
+    // bootstrap, and that can be changed in the source of the
+    // compiled program.
+    LmcRam array[LMC_MAXRAM] = { [LMC_STARTPOS] = LMC_MAXROM + 3 };
 
     LmcLexer lexer = {
         // .current value reserves space for the header.
