@@ -100,7 +100,7 @@ static LmcDoc lmc_doc = {
         { .name = "version", .group = -1, .arg = NULL, .key = VERSIONOPT, .doc = "Print the version" },
         { .name = "compile", .group = 1, .arg = "SOURCE", .key = COMPILEOPT, .doc = "Compile SOURCE to FILE" },
         { .name = "debug",   .group = 1, .arg = NULL,     .key = DEBUGONOPT, .doc = "Use the debugger" },
-        { .name = "bootstrap", .group = 1, .arg = "FILE", .key = BOOTSTPOPT, .doc = "Use a custom compiled bootstrap stored in FILE" },
+        { .name = "bootstrap", .group = 1, .arg = "BOOTFILE", .key = BOOTSTPOPT, .doc = "Use a custom compiled bootstrap stored in BOOTFILE" },
         { .name = NULL, .group = 0, .arg = NULL, .key = 0, .doc = NULL },
     },
     .help =
