@@ -41,7 +41,8 @@ EOF            { yylineno = 0; return EOF; }
 <BLOCK>\n      { ++yylineno; }
 <BLOCK>.       {}
 <BLOCK>"*/"    { BEGIN(INITIAL); }
-x[[:xdigit:]]+ { yylval.value = (LmcRam)strtol(yytext+1, NULL, 16); return VALUE; } /* hex value */
+0x[[:xdigit:]]+ { yylval.value = (LmcRam)strtol(yytext+2, NULL, 16); return VALUE; } /* 0x hex value */
+x[[:xdigit:]]+ { yylval.value = (LmcRam)strtol(yytext+1, NULL, 16); return VALUE; } /* x hex value */
 [[:digit:]]+   { yylval.value = (LmcRam)strtol(yytext, NULL, 10); return VALUE; }   /* decimal value */
 [[:alpha:]]+   { yylval.string = strdup(yytext); return KEYWORD; }                  /* keyword */
 \*?@           { yylval.string = strdup(yytext); return POINTER; }                  /* modifiers */
