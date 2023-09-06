@@ -4,7 +4,7 @@ add 0x23
 LOAD @ xffffffffffff53 // more than the RAM size can handle
 jump *@ xaf
 
-in 0x02 // comment test 2
+0x09 0x02 // instruction IN
 /*
  * comment block test
  */
@@ -17,4 +17,4 @@ foo
 
           */
 load @
-brz 342 // 342 % 256 == 86 == 0x56
+18 342 // BRZ, 342 % 256 == 86 == 0x56
