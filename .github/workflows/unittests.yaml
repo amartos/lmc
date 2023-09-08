@@ -19,8 +19,5 @@ jobs:
         run: make -C sccroll install
       - name: Pulling repo
         uses: actions/checkout@v4
-        with:
-          ref: "master"
-          path: "repo"
       - name: Unit testing and coverage calculation
-        run: make -C repo tests
+        run: make -C $GITHUB_WORKSPACE tests
