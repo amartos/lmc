@@ -1,0 +1,3 @@
+[submodule "Sccroll"]
+	path = Sccroll
+	url = https://github.com/amartos/Sccroll

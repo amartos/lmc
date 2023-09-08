@@ -20,6 +20,7 @@ SHELL		= /usr/bin/env bash
 
 SRCS		= src
 INCLUDES	= include
+SUBM		= Sccroll
 
 TESTS		= tests
 UNITS		:= $(TESTS)/units
@@ -34,6 +35,7 @@ PCOV		:= $(SCRIPTS)/pcov.sh
 BUILD		= build
 BIN			:= $(BUILD)/bin
 LIBS		:= $(BUILD)/lib
+SUBMLIBS	:= $(SUBM:%=%/$(BUILD)/lib)
 DEPS		:= $(BUILD)/deps
 OBJS		:= $(BUILD)/objs
 LOGS		:= $(BUILD)/logs
@@ -139,7 +141,7 @@ $(BIN)/%: $(OBJS)/%.o $(CDEPS:%.c=$(OBJS)/%.o)
 
 $(LOGS)/%.log: $(BIN)/%
 	@mkdir -p $(@D)
-	@LD_LIBRARY_PATH=$(LIBS):/usr/local/lib $< $(ARGS) &> $@ \
+	@LD_LIBRARY_PATH=$(LIBS)$(SUBMLIBS:%=:%):/usr/local/lib $< $(ARGS) &> $@ \
 		&& $(INFO) pass $(*F) \
 		|| ($(INFO) fail $(*F); true)
 
@@ -190,14 +192,18 @@ tests-no-ucodes: CFLAGS = $(shell grep -v "D_UCODES" compile_flags.txt)
 tests-no-ucodes: tests
 
 # @brief Execute the tests: units tests, coverage
-tests: CFLAGS += -g -O0 --coverage
-tests: LDLIBS += -L$(LIBS) -lsccroll -ldl --coverage
-tests: clean init $(UDEPS:%.c=$(LOGS)/%.difflog)
+tests: CFLAGS += $(SUBM:%=-I%/include) -g -O0 --coverage
+tests: LDLIBS += -L$(LIBS) $(SUBMLIBS:%= -L%) -lsccroll -ldl --coverage
+tests: clean testsinit $(UDEPS:%.c=$(LOGS)/%.difflog)
 	@$(COV) $(COVOPTS) $(COVOPTSXML) $(COVOPTSHTML) $(BUILD)
 	@find $(BUILD) \( -name "*.gcno" -or -name "*.gcda" -or -empty \) -delete
 	@find $(SRCS) \( -name "*.tab.c" -or -name "*.tab.h" -or -name "*.yy.c" \) -delete
 	@$(INFO) ok coverage
 	@$(PCOV) $(COVXML)
+
+# Initialize any artifact needed for the tests
+testsinit: init subminit
+	@make -sC Sccroll > /dev/null
 
 export NAME VERSION BRIEF LOGO DOCS EXAMPLES DOCSLANG SRC INCLUDES TESTS
 
@@ -210,6 +216,11 @@ docs: $(DOXCONF)
 # @brief Initialize the compilation directory
 init:
 	@mkdir -p $(BIN) $(OBJS) $(LOGS) $(DEPS) $(LIBS) $(REPORTS)
+
+# @brief Initialize and update the submodules
+subminit:
+	@git submodule --quiet sync --recursive
+	@git submodule --quiet update --init --recursive
 
 # @brief Nuke all files not in VCS
 clean:

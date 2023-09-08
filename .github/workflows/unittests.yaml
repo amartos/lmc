@@ -9,14 +9,6 @@ jobs:
     steps:
       - name: Installing dependencies packages
         run: sudo apt update && sudo apt install -y rsync flex bison gcovr
-      - name: Pulling Sccroll dependency
-        uses: actions/checkout@v4
-        with:
-          repository: amartos/Sccroll
-          ref: "master"
-          path: "sccroll"
-      - name: Installing Sccroll
-        run: make -C sccroll install
       - name: Pulling repo
         uses: actions/checkout@v4
       - name: Unit testing and coverage calculation

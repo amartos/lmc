@@ -18,7 +18,7 @@
  * Custom units tests library.
  * @see https://github.com/amartos/Sccroll
  */
-#include <sccroll.h>
+#include "sccroll.h"
 
 /**
  * @def MANUALIN

@@ -17,24 +17,23 @@ usefulness or for fun.
 
 The software, by itself, only depends on the standard C library, =flex=
 and =bison=. If you want to run the tests, both =gcovr= and the [[https://github.com/amartos/Sccroll][Sccroll]]
-library are needed. The Makefile, besides =make,= depends on =rsync=.
+library are needed. The latter is used as a submodule, so don't forget
+the =--recurse-submodules= option at the cloning step. The Makefile,
+besides =make,= depends on =rsync=.
 
 Here is the list of commands to install all of these on Debian-based
 systems:
 
 #+begin_src bash
   sudo apt install -y git rsync flex bison gcovr
-  git clone https://github.com/amartos/Sccroll
-  make -C Sccroll install
 #+end_src
 
 ** Install
 
-Download the repo using either Github =code > download zip= button or by
-cloning it:
+Download the repo by cloning it:
 
 #+begin_src bash
-  git clone https://github.com/amartos/lmc
+  git clone --recurse-submodules https://github.com/amartos/lmc
 #+end_src
 
 Once [[Dependencies][dependencies]] are installed, you can then compile by running
