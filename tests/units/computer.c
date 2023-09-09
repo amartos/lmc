@@ -11,6 +11,7 @@
 #include "tests/common.h"
 #include "lmc/computer.h"
 
+#include <limits.h>
 #include <stdio.h>
 #include <stdarg.h>
 
@@ -23,6 +24,27 @@
 
 static const char* bootstrap = NULL;
 static const char* file = NULL;
+
+static const unsigned long long too_much = ~(0ull);
+static char* too_much_prog = NULL;
+static char* too_much_err = NULL;
+
+__attribute__((constructor)) // This must be set before the tests registration.
+void too_much_init(void)
+{
+    char buffer[BUFSIZ] = {0};
+    sprintf(buffer, "30\n04\n%llu\n01\n42\n04\n00\n", too_much);
+    too_much_prog = strdup(buffer);
+    sprintf(buffer, "computer: Not a valid hexadecimal value: '%llu': Numerical result out of range\n", too_much);
+    too_much_err = strdup(buffer);
+}
+
+__attribute__((destructor))
+void too_much_clean(void)
+{
+    free(too_much_prog);
+    free(too_much_err);
+}
 
 void sccroll_before(void) { bootstrap = NULL, file = NULL; }
 
@@ -210,8 +232,24 @@ SCCROLL_TEST(
             "42"
         },
         [STDERR_FILENO] = { .content.blob =
-            "computer: Not a hexadecimal value: 'XY': Invalid argument\n"
+            "computer: Not a valid hexadecimal value: 'XY': Invalid argument\n"
         },
+     }
+)
+{ assert(!lmc_shell(BOOTSTRAP, CMDLINE)); }
+
+SCCROLL_TEST(
+    invalid_number_errors_handling,
+    .std = {
+        [STDIN_FILENO]  = { .content.blob = too_much_prog },
+        [STDOUT_FILENO] = { .content.blob =
+            "? >? >"
+            "? >"
+            "? >? >"
+            "? >? >"
+            "42"
+        },
+        [STDERR_FILENO] = { .content.blob = too_much_err  },
      }
 )
 { assert(!lmc_shell(BOOTSTRAP, CMDLINE)); }

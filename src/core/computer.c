@@ -617,7 +617,7 @@ static void lmc_busInput(void)
     if (eof) {
         if (error) {
             errno = errno ? errno : EINVAL;
-            warn("Not a hexadecimal value: '%s'", digits);
+            warn("Not a valid hexadecimal value: '%s'", digits);
         }
         else if (ferror(lmc_hal.bus.input)) warn(NULL);
 
@@ -634,12 +634,11 @@ static int lmc_convert(const char* restrict number)
 
     char* endptr;
     errno = 0;
-    lmc_hal.bus.buffer = (LmcRam) strtoul(number, &endptr, 16);
-    return strlen(number) > LMC_MAXDIGITS
-        || errno
-        || *endptr
-        ? EXIT_FAILURE
-        : EXIT_SUCCESS;
+    unsigned long converted_number = strtoul(number, &endptr, 16);
+    if (errno || *endptr) return EXIT_FAILURE;
+
+    lmc_hal.bus.buffer = (LmcRam) (converted_number % LMC_MAXVAL);
+    return EXIT_SUCCESS;
 }
 
 // clang-format off
