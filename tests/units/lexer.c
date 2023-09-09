@@ -36,15 +36,14 @@ void test_opcode(void)
 
 void test_append(void)
 {
-    LmcRam values[10] = { 0 };
-    LmcRamArray array = { .values = values, .max = 10, };
-    lmc_append(&array, 42, 23);
-    if (!sccroll_mockGetTrigger())
-    {
-        assert(array.values[0] == 42);
-        assert(array.values[1] == 23);
-        assert(array.max == 10);
-        assert(array.current == 2);
+    for (bytes.current = 0; bytes.current < bytes.max; ) {
+        size_t before_index = bytes.current;
+        lmc_append(&bytes, 42, 23);
+        assert(bytes.current == before_index + 2);
+        if (!sccroll_mockGetTrigger()) {
+            assert(bytes.values[before_index] == 42);
+            assert(bytes.values[before_index+1] == 23);
+        }
     }
 }
 
@@ -68,12 +67,19 @@ void lmc_lexerFatalCallback(LmcRamArray* array, LmcRam a, LmcRam b)
     err(EXIT_FAILURE, "callback called when it should not");
 }
 
-void sccroll_before(void) {
-    if (bytes.values) {
-        free(bytes.values);
-        bytes.max     = 0;
-        bytes.current = 0;
+void set_bytes_array(size_t size) {
+    if (size) {
+        bytes.max = size;
+        bytes.values = calloc(bytes.max, sizeof(LmcRam));
+        if (!bytes.values)
+            err(EXIT_FAILURE, "failed alloc for array.values of size %lu", bytes.max);
     }
+}
+
+void sccroll_after(void)
+{
+    free(bytes.values);
+    bytes.max = 0;
 }
 
 // clang-format off
@@ -116,8 +122,7 @@ SCCROLL_TEST(
 
 SCCROLL_TEST(analysis)
 {
-    bytes.values = calloc(DUMMYCODELEN, sizeof(LmcRam));
-    if (!bytes.values) err(EXIT_FAILURE, "could not allocate for dummy code dup");
+    set_bytes_array(10);
     memcpy(bytes.values, DUMMYCODE, sizeof(LmcRam)*DUMMYCODELEN);
     bytes.max = DUMMYCODELEN;
 
@@ -135,7 +140,13 @@ SCCROLL_TEST(analysis)
 }
 
 SCCROLL_TEST(append)
-{ test_append(); }
+{
+    set_bytes_array(10);
+    test_append();
+}
 
 SCCROLL_TEST(append_error)
-{ sccroll_mockPredefined(test_append); }
+{
+    set_bytes_array(10);
+    sccroll_mockPredefined(test_append);
+}
