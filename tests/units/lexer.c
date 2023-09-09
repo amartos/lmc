@@ -23,6 +23,7 @@
 // clang-format on
 
 static LmcRamArray bytes = {0};
+static size_t times = 0;
 
 void test_opcode(void)
 {
@@ -36,7 +37,7 @@ void test_opcode(void)
 
 void test_append(void)
 {
-    for (bytes.current = 0; bytes.current < bytes.max; ) {
+    for (bytes.current = 0; bytes.current < (times ? times : bytes.max); ) {
         size_t before_index = bytes.current;
         lmc_append(&bytes, 42, 23);
         assert(bytes.current == before_index + 2);
@@ -67,19 +68,21 @@ void lmc_lexerFatalCallback(LmcRamArray* array, LmcRam a, LmcRam b)
     err(EXIT_FAILURE, "callback called when it should not");
 }
 
-void set_bytes_array(size_t size) {
+void set_bytes_array(size_t size, size_t t) {
     if (size) {
         bytes.max = size;
         bytes.values = calloc(bytes.max, sizeof(LmcRam));
         if (!bytes.values)
             err(EXIT_FAILURE, "failed alloc for array.values of size %lu", bytes.max);
     }
+    times = t;
 }
 
 void sccroll_after(void)
 {
     free(bytes.values);
     bytes.max = 0;
+    times = 0;
 }
 
 // clang-format off
@@ -122,7 +125,7 @@ SCCROLL_TEST(
 
 SCCROLL_TEST(analysis)
 {
-    set_bytes_array(10);
+    set_bytes_array(10, 0);
     memcpy(bytes.values, DUMMYCODE, sizeof(LmcRam)*DUMMYCODELEN);
     bytes.max = DUMMYCODELEN;
 
@@ -141,12 +144,27 @@ SCCROLL_TEST(analysis)
 
 SCCROLL_TEST(append)
 {
-    set_bytes_array(10);
+    set_bytes_array(10, 0);
+    test_append();
+}
+
+SCCROLL_TEST(
+    append_too_much,
+    .code = { .type = SCCSTATUS, .value = EXIT_FAILURE, },
+    .std = {
+        [STDERR_FILENO] = { .content.blob =
+            // (2a,17) base 16 == (42,23) base 10
+            "lexer: memory array size insufficient at (2a,17): Cannot allocate memory",
+        }
+    }
+)
+{
+    set_bytes_array(10, 15); // 10 size, 15 to insert
     test_append();
 }
 
 SCCROLL_TEST(append_error)
 {
-    set_bytes_array(10);
+    set_bytes_array(10, 0);
     sccroll_mockPredefined(test_append);
 }
