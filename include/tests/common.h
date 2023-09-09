@@ -101,6 +101,34 @@
 #define BOOTSTRAP _BOOTSTRAP()
 
 /**
+ * @def NOSIZEBOOTSTRAP
+ * @since 0.1.0
+ * @brief Bootstrap program, but size is null.
+ */
+#define NOSIZEBOOTSTRAP _BOOTSTRAP("no_size_")
+
+/**
+ * @def NULLBOOTSTRAP
+ * @since 0.1.0
+ * @brief Bootstrap program, but size is null.
+ */
+#define NULLBOOTSTRAP _BOOTSTRAP("null_size_")
+
+/**
+ * @def TRUNCBOOTSTRAP
+ * @since 0.1.0
+ * @brief Bootstrap with a header size, but no program.
+ */
+#define TRUNCBOOTSTRAP _BOOTSTRAP("truncated_")
+
+/**
+ * @def WRONGBOOTSTRAP
+ * @since 0.1.0
+ * @brief Bootstrap with a wrong header size value.
+ */
+#define WRONGBOOTSTRAP _BOOTSTRAP("size_not_accurate_")
+
+/**
  * @def ALTBOOTSTRAP
  * @since 0.1.0
  * @brief Alternative compiled bootstrap.

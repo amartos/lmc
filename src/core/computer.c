@@ -430,16 +430,19 @@ static void lmc_bootstrap(const char* restrict path)
 {
     FILE* file = fopen(path, "rb");
     size_t size = LMC_MAXROM;
+    size_t final = 0;
 
     // As the bootstrap is itself compiled using the LMC compiler, the
     // first two values are the start position and the size. The first
     // is ignored, and the second is checked before loading the
-    // bootstrap in memory (in case the given bootstrap is larger than
-    // the ROM).
-    if (!file
-        || fseek(file, sizeof(LmcRam), SEEK_SET)
-        || (!fread(&size, sizeof(LmcRam), 1, file) && ferror(file)))
+    // bootstrap in memory (in case of discrepancy or if the given
+    // bootstrap is larger than the ROM).
+    if (!file || fseek(file, sizeof(LmcRam), SEEK_SET))
         err(EXIT_FAILURE, "%s: could not load bootstrap", path);
+    else if (fread(&size, sizeof(LmcRam), 1, file) < 1) {
+        errno = ENOEXEC;
+        err(EXIT_FAILURE, "%s: missing size for bootstrap header", path);
+    }
     else if (size > LMC_MAXROM) {
         errno = EFBIG;
         err(
@@ -448,9 +451,17 @@ static void lmc_bootstrap(const char* restrict path)
             size, LMC_MAXROM
         );
     }
-
-    if (!fread(lmc_hal.mem.ram, sizeof(LmcRam), LMC_MAXROM, file) && ferror(file))
-        err(EXIT_FAILURE, "%s: could not load bootstrap", path);
+    else if (size == 0) {
+        errno = ECANCELED;
+        warn("%s: the bootstrap indicated size is null", path);
+        fprintf(stderr, "Fallback to default bootstrap\n");
+    }
+    else if ((final = fread(lmc_hal.mem.ram, sizeof(LmcRam), LMC_MAXROM, file)) < size)
+        err(
+            EXIT_FAILURE,
+            "%s: header size (%lu bytes) differs from total read (%lu bytes)",
+            path, size, final
+        );
     fclose(file);
 }
 

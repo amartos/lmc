@@ -246,3 +246,58 @@ SCCROLL_TEST(
     }
 )
 { assert(!lmc_shell(BIGBOOTSTRAP, NULL)); }
+
+SCCROLL_TEST(
+    no_size_bootstrap,
+    .code = {
+        .type  = SCCSTATUS,
+        .value = EXIT_FAILURE,
+    },
+    .std = {
+        [STDERR_FILENO] = { .content.blob =
+            "computer: " NOSIZEBOOTSTRAP ": missing size for bootstrap header: Exec format error"
+        },
+    }
+)
+{ assert(!lmc_shell(NOSIZEBOOTSTRAP, NULL)); }
+
+SCCROLL_TEST(
+    null_size_bootstrap,
+    .std = {
+        [STDIN_FILENO]  = { .content.blob = "30\n02\n04\n00" },
+        [STDOUT_FILENO] = { .content.blob = "? >? >? >? >" },
+        [STDERR_FILENO] = { .content.blob =
+            "computer: " NULLBOOTSTRAP ": the bootstrap indicated size is null: Operation canceled\n"
+            "Fallback to default bootstrap"
+        },
+    }
+)
+{ assert(!lmc_shell(NULLBOOTSTRAP, NULL)); }
+
+SCCROLL_TEST(
+    bad_size_bootstrap,
+    .code = {
+        .type  = SCCSTATUS,
+        .value = EXIT_FAILURE,
+    },
+    .std = {
+        [STDERR_FILENO] = { .content.blob =
+            "computer: " WRONGBOOTSTRAP ": header size (16 bytes) differs from total read (2 bytes): Success"
+        },
+    }
+)
+{ assert(!lmc_shell(WRONGBOOTSTRAP, NULL)); }
+
+SCCROLL_TEST(
+    truncated_bootstrap,
+    .code = {
+        .type  = SCCSTATUS,
+        .value = EXIT_FAILURE,
+    },
+    .std = {
+        [STDERR_FILENO] = { .content.blob =
+            "computer: " TRUNCBOOTSTRAP ": header size (16 bytes) differs from total read (0 bytes): Success"
+        },
+    }
+)
+{ assert(!lmc_shell(TRUNCBOOTSTRAP, NULL)); }
