@@ -449,7 +449,7 @@ static void lmc_bootstrap(const char* restrict path)
         );
     }
 
-    if (fread(lmc_hal.mem.ram, sizeof(LmcRam), LMC_MAXROM, file) && ferror(file))
+    if (!fread(lmc_hal.mem.ram, sizeof(LmcRam), LMC_MAXROM, file) && ferror(file))
         err(EXIT_FAILURE, "%s: could not load bootstrap", path);
     fclose(file);
 }
