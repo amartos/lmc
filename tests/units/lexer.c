@@ -22,7 +22,7 @@
  ******************************************************************************/
 // clang-format on
 
-LmcRamArray bytes = {0};
+static LmcRamArray bytes = {0};
 
 void test_opcode(void)
 {
