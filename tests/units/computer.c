@@ -339,3 +339,17 @@ SCCROLL_TEST(
     }
 )
 { assert(!lmc_shell(TRUNCBOOTSTRAP, NULL)); }
+
+SCCROLL_TEST(
+    bootstrap_is_stdstream,
+    .code = {
+        .type  = SCCSTATUS,
+        .value = EXIT_FAILURE,
+    },
+    .std = {
+        [STDERR_FILENO] = { .content.blob =
+            "computer: " STDOUTPATH ": could not load bootstrap: Illegal seek"
+        },
+    }
+)
+{ assert(!lmc_shell(STDOUTPATH, NULL)); }

@@ -86,6 +86,14 @@
 #define UNDEFINED "foobar"
 
 /**
+ * @def STDOUTPATH
+ * @since 0.1.0
+ * @brief Path of the standard output stream.
+ * The interest of this is for non-seekability.
+ */
+#define STDOUTPATH "/dev/stdout"
+
+/**
  * @def _BOOTSTRAP
  * @since 0.1.0
  * @brief Compiled bootstrap.
